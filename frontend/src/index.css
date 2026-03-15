@@ -1,0 +1,292 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========== Global Base ========== */
+:root {
+  --color-primary: #3b82f6;
+  --color-accent: #8b5cf6;
+  --color-surface: #0f172a;
+  --color-card: rgba(15, 23, 42, 0.85);
+  --glow-blue: 0 0 20px rgba(59,130,246,0.25);
+  --glow-purple: 0 0 20px rgba(139,92,246,0.2);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #060d1a;
+  color: #e2e8f0;
+}
+
+/* ========== Main Content Area Background ========== */
+.main-bg {
+  background-color: #060d1a;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(59, 130, 246, 0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(139, 92, 246, 0.06) 0%, transparent 60%),
+    url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='grid' width='60' height='60' patternUnits='userSpaceOnUse'%3E%3Cpath d='M 60 0 L 0 0 0 60' fill='none' stroke='rgba(148,163,184,0.04)' stroke-width='1'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='60' height='60' fill='url(%23grid)'/%3E%3C/svg%3E");
+}
+
+/* ========== Sidebar Custom Styles ========== */
+.sidebar-brand {
+  background: linear-gradient(135deg, #0a0f1e 0%, #0d1932 100%);
+  border-bottom: 1px solid rgba(59,130,246,0.2);
+}
+
+.sidebar-logo-glow {
+  filter: drop-shadow(0 0 8px rgba(59,130,246,0.7));
+}
+
+/* ========== Element Plus Dark Overrides ========== */
+.el-card {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  border-color: rgba(51, 65, 85, 0.6) !important;
+  border-radius: 12px !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.el-card__header {
+  background-color: rgba(30, 41, 59, 0.5) !important;
+  border-bottom-color: rgba(51, 65, 85, 0.5) !important;
+  padding: 14px 20px !important;
+  color: #e2e8f0 !important;
+}
+
+.el-card__body {
+  background-color: transparent !important;
+  color: #e2e8f0 !important;
+}
+
+.el-input__wrapper {
+  background-color: rgba(2, 8, 23, 0.8) !important;
+  box-shadow: 0 0 0 1px rgba(51, 65, 85, 0.7) !important;
+}
+.el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.5) !important;
+}
+.el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1px #3b82f6 !important;
+}
+
+.el-input__inner {
+  color: #e2e8f0 !important;
+}
+
+.el-select .el-input__wrapper {
+  background-color: rgba(2, 8, 23, 0.8) !important;
+}
+
+.el-input-number .el-input__wrapper {
+  background-color: rgba(2, 8, 23, 0.8) !important;
+}
+
+.el-form-item__label {
+  color: #94a3b8 !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
+.el-divider {
+  border-color: rgba(51, 65, 85, 0.5) !important;
+}
+
+.el-divider__text {
+  background-color: transparent !important;
+  color: #64748b !important;
+}
+
+.el-progress-bar__outer {
+  background-color: rgba(51, 65, 85, 0.5) !important;
+}
+
+.el-descriptions__label {
+  background-color: rgba(30, 41, 59, 0.6) !important;
+  color: #94a3b8 !important;
+}
+.el-descriptions__content {
+  background-color: rgba(15, 23, 42, 0.6) !important;
+  color: #e2e8f0 !important;
+}
+.el-descriptions__cell {
+  border-color: rgba(51, 65, 85, 0.5) !important;
+}
+
+.el-table {
+  --el-table-bg-color: transparent !important;
+  --el-table-tr-bg-color: transparent !important;
+  --el-table-header-bg-color: rgba(30, 41, 59, 0.6) !important;
+  --el-table-header-text-color: #94a3b8 !important;
+  --el-table-text-color: #cbd5e1 !important;
+  --el-table-border-color: rgba(51, 65, 85, 0.4) !important;
+  --el-table-row-hover-bg-color: rgba(59, 130, 246, 0.07) !important;
+}
+
+.el-tag {
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+/* ========== Glow Button ========== */
+.btn-glow {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4), 0 4px 15px rgba(59, 130, 246, 0.2) !important;
+  transition: box-shadow 0.3s ease !important;
+}
+.btn-glow:hover {
+  box-shadow: 0 0 30px rgba(59, 130, 246, 0.6), 0 4px 20px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* ========== Custom Scrollbar ========== */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.4);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(51, 65, 85, 0.8);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3b82f6;
+}
+
+/* ========== Button Fix ========== */
+.el-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+}
+.el-button > span {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: normal !important;
+}
+button, input, optgroup, select, textarea {
+  line-height: normal !important;
+}
+
+/* ========== Table Tree Expand Fix ========== */
+/* Global el-tree dark override */
+.el-tree {
+  background-color: transparent !important;
+  color: #cbd5e1 !important;
+}
+.el-tree-node__content {
+  color: #cbd5e1 !important;
+}
+.el-tree-node__content:hover {
+  background-color: rgba(59,130,246,0.08) !important;
+}
+.el-table__expand-icon {
+  color: #64748b !important;
+}
+.el-table__expand-icon:hover {
+  color: #3b82f6 !important;
+}
+.el-table tr {
+  background-color: transparent !important;
+}
+.el-table td.el-table__cell,
+.el-table th.el-table__cell {
+  background-color: transparent !important;
+}
+/* Fix el-table tree indent lines */
+.el-table .el-table__indent {
+  border-color: rgba(51,65,85,0.4) !important;
+}
+/* Fix el-table__body-wrapper white bg */
+.el-table__body-wrapper,
+.el-table__header-wrapper {
+  background-color: transparent !important;
+}
+/* Fix tree expand/collapse arrow button white box */
+.el-table__expand-icon .el-icon {
+  background: transparent !important;
+}
+.el-table__placeholder {
+  background: transparent !important;
+}
+/* Fix dropdown popper background */
+.el-select-dropdown,
+.el-dropdown-menu {
+  background-color: #0f172a !important;
+  border-color: rgba(51,65,85,0.6) !important;
+}
+.el-select-dropdown__item {
+  color: #cbd5e1 !important;
+}
+.el-select-dropdown__item:hover,
+.el-select-dropdown__item.is-hovering {
+  background-color: rgba(59,130,246,0.1) !important;
+}
+.el-select-dropdown__item.is-selected {
+  color: #60a5fa !important;
+}
+.el-dropdown-menu__item {
+  color: #cbd5e1 !important;
+}
+.el-dropdown-menu__item:hover {
+  background-color: rgba(59,130,246,0.1) !important;
+  color: #93c5fd !important;
+}
+.section-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(59,130,246,0.12);
+  border: 1px solid rgba(59,130,246,0.25);
+  border-radius: 9999px;
+  font-size: 11px;
+  color: #93c5fd;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* ========== Layer Row Cards ========== */
+.layer-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 20px;
+  border-radius: 10px;
+  border: 1px solid rgba(51, 65, 85, 0.5);
+  transition: all 0.25s ease;
+}
+.layer-row:hover {
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(59, 130, 246, 0.04);
+}
+
+/* ========== Glowing Indicator ========== */
+.indicator-blue {
+  width: 3px;
+  height: 36px;
+  background: linear-gradient(to bottom, #60a5fa, #3b82f6);
+  border-radius: 9999px;
+  box-shadow: 0 0 10px rgba(59,130,246,0.8);
+  flex-shrink: 0;
+}
+.indicator-green {
+  width: 3px;
+  height: 36px;
+  background: linear-gradient(to bottom, #34d399, #10b981);
+  border-radius: 9999px;
+  box-shadow: 0 0 10px rgba(16,185,129,0.8);
+  flex-shrink: 0;
+}
+.indicator-gray {
+  width: 3px;
+  height: 36px;
+  background: linear-gradient(to bottom, #94a3b8, #64748b);
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
