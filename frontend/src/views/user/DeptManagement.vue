@@ -2,20 +2,19 @@
   <div class="p-6 space-y-5 min-h-full">
 
     <!-- Page Header -->
-    <div class="flex justify-between items-start">
-      <div class="flex items-center gap-4">
-        <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-             style="background:linear-gradient(135deg,#4f46e5,#7c3aed); box-shadow:0 0 20px rgba(99,102,241,0.4);">
-          <el-icon size="22" style="color:white;"><OfficeBuilding /></el-icon>
-        </div>
-        <div>
-          <div class="section-badge mb-1.5">
-            <span style="width:6px;height:6px;background:#818cf8;border-radius:50%;display:inline-block;"></span>
-            Dept Management
+    <div class="flex justify-between items-center">
+      <div>
+        <div class="flex items-center gap-3">
+          <div class="rounded-xl flex items-center justify-center flex-shrink-0"
+               style="width:36px;height:36px;background:linear-gradient(135deg,#4f46e5,#7c3aed); box-shadow:0 0 20px rgba(99,102,241,0.4);">
+            <el-icon size="20" style="color:white;"><OfficeBuilding /></el-icon>
           </div>
-          <h1 class="text-lg font-bold text-white tracking-tight">部门管理</h1>
-          <p class="text-slate-400 text-sm mt-0.5">管理组织架构与部门层级关系</p>
+          <h1 class="text-2xl font-extrabold tracking-tight"
+              style="background:linear-gradient(90deg,#818cf8,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+            部门管理
+          </h1>
         </div>
+        <p class="text-slate-500 text-xs mt-1.5 ml-[48px]">管理组织架构与部门层级关系</p>
       </div>
       <button @click="handleAdd()"
         class="btn-glow flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:scale-105"

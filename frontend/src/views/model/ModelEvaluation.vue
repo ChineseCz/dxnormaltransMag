@@ -1,7 +1,19 @@
 <template>
   <div class="p-6 space-y-6">
     <div class="flex justify-between items-center">
-      <h1 class="text-2xl font-bold text-white">模型结果评估</h1>
+      <div>
+        <div class="flex items-center gap-3">
+          <div class="rounded-xl flex items-center justify-center flex-shrink-0"
+               style="width:36px;height:36px;background:linear-gradient(135deg,#059669,#10b981); box-shadow:0 0 20px rgba(16,185,129,0.4);">
+            <el-icon size="20" style="color:white;"><TrendCharts /></el-icon>
+          </div>
+          <h1 class="text-2xl font-extrabold tracking-tight"
+              style="background:linear-gradient(90deg,#34d399,#6ee7b7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+            模型结果评估
+          </h1>
+        </div>
+        <p class="text-slate-500 text-xs mt-1.5 ml-[48px]">模型预测精度可视化分析与误差评估</p>
+      </div>
       <el-dropdown>
         <el-button type="primary">
           更新评估模型: {{ selectedModel }}<el-icon class="el-icon--right"><arrow-down /></el-icon>
@@ -58,7 +70,7 @@
 
 <script setup>
 import { ref } from 'vue';
-import { ArrowDown } from '@element-plus/icons-vue';
+import { ArrowDown, TrendCharts } from '@element-plus/icons-vue';
 import { use } from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
 import { LineChart, BarChart } from 'echarts/charts';

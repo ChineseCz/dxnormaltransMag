@@ -7,6 +7,7 @@ from api.user import user_bp
 from api.data import data_bp
 from api.model import model_bp
 from api.predict import predict_bp
+from api.dataset import dataset_bp
 
 def create_app():
     app = Flask(__name__)
@@ -17,6 +18,7 @@ def create_app():
     app.register_blueprint(data_bp, url_prefix='/api/data')
     app.register_blueprint(model_bp, url_prefix='/api/model')
     app.register_blueprint(predict_bp, url_prefix='/api/predict')
+    app.register_blueprint(dataset_bp, url_prefix='/api/dataset')
 
     @app.route('/')
     def index():

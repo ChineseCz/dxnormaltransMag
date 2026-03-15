@@ -2,8 +2,17 @@
   <div class="p-6 space-y-6">
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-2xl font-bold text-white">模型仓库</h1>
-        <p class="text-gray-400 text-sm mt-1">管理已保存的 PyTorch 模型权重文件 (.pth)</p>
+        <div class="flex items-center gap-3">
+          <div class="rounded-xl flex items-center justify-center flex-shrink-0"
+               style="width:36px;height:36px;background:linear-gradient(135deg,#b45309,#f59e0b); box-shadow:0 0 20px rgba(245,158,11,0.4);">
+            <el-icon size="20" style="color:white;"><Box /></el-icon>
+          </div>
+          <h1 class="text-2xl font-extrabold tracking-tight"
+              style="background:linear-gradient(90deg,#fbbf24,#fde68a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+            模型仓库
+          </h1>
+        </div>
+        <p class="text-slate-500 text-xs mt-1.5 ml-[48px]">管理已保存的 PyTorch 模型权重文件 (.pth)</p>
       </div>
       <el-button type="primary" @click="fetchModels">
         <el-icon class="mr-1"><Refresh /></el-icon>刷新列表

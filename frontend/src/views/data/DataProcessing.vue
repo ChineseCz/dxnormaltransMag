@@ -3,55 +3,71 @@
 
     <!-- Page Header -->
     <div class="flex justify-between items-center">
-      <div class="flex items-center gap-3">
-        <img src="/logo.svg" alt="logo" style="width:28px; height:28px; flex-shrink:0;" />
-        <div>
-          <div class="section-badge mb-1">
-            <span style="width:6px;height:6px;background:#22d3ee;border-radius:50%;display:inline-block;"></span>
-            Data Processing
+      <div>
+        <div class="flex items-center gap-3">
+          <div class="rounded-xl flex items-center justify-center flex-shrink-0"
+               style="width:36px;height:36px;background:linear-gradient(135deg,#d97706,#f59e0b); box-shadow:0 0 20px rgba(217,119,6,0.4);">
+            <el-icon size="20" style="color:white;"><MagicStick /></el-icon>
           </div>
-          <h1 class="text-lg font-bold text-white tracking-tight leading-tight">数据治理与稳态特征提取</h1>
-          <p class="text-slate-400 text-xs mt-0.5">电参量时序数据的清洗、划分与特征工程</p>
+          <h1 class="text-2xl font-extrabold tracking-tight"
+              style="background:linear-gradient(90deg,#fbbf24,#fcd34d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+            数据治理与特征提取
+          </h1>
         </div>
+        <p class="text-slate-500 text-xs mt-1.5 ml-[48px]">电参量时序数据的清洗、划分与特征工程</p>
       </div>
-      <button @click="autoDetectStable"
-        class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:scale-105"
+      <button @click="autoDetectStable" :disabled="!activeDataset"
+        class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:scale-105 disabled:opacity-40"
         style="background:linear-gradient(135deg,#d97706,#f59e0b); border:1px solid rgba(245,158,11,0.4); box-shadow:0 0 16px rgba(217,119,6,0.35);">
         <el-icon><MagicStick /></el-icon>
         一键识别稳态起点
       </button>
     </div>
 
-    <!-- 4 Step Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <!-- Dataset Selector Bar -->
+    <div class="p-4 rounded-xl" style="background:rgba(10,18,36,0.85); border:1px solid rgba(20,184,166,0.2);">
+      <DatasetSelector ref="selectorRef" @change="onDatasetChange" />
+      <p v-if="!activeDataset" class="text-yellow-500/80 text-xs mt-2">
+        ⚠ 请先选择一个数据集以开始数据处理流程
+      </p>
+    </div>
 
-      <!-- Step 1 -->
+    <!-- 4 Step Cards -->
+    <div v-if="activeDataset" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+      <!-- Step 1: 稳态截取 -->
       <el-card style="background:rgba(10,18,36,0.85); border:1px solid rgba(8,145,178,0.2);">
         <template #header>
           <div class="flex items-center gap-2.5">
             <span class="inline-flex items-center justify-center w-5 h-5 rounded text-xs font-bold text-white flex-shrink-0"
                   style="background:linear-gradient(135deg,#0891b2,#0ea5e9);">1</span>
             <span class="text-white font-semibold text-sm">. 稳态周期自动截取</span>
-            <span class="text-slate-400 text-xs ml-1">· Cut & Split</span>
+            <span class="text-slate-400 text-xs ml-1">· Cut & Extract</span>
           </div>
         </template>
         <div class="space-y-4">
           <p style="color:#e2e8f0; font-size:14px; line-height:1.6;">
-            利用 FFT 算法或相关性分析，消除仿真初始阶段的暂态涌流干扰，自动提取稳定运行区间。
+            从 <span class="text-cyan-300 font-semibold">{{ deviceLabel }}</span> 的
+            <span class="text-cyan-300 font-semibold">{{ fieldLabel }}</span>仿真数据中，
+            自动提取稳定运行区间，消除暂态过程干扰。
           </p>
           <div class="p-4 rounded-xl space-y-4" style="background:rgba(2,8,23,0.6); border:1px solid rgba(51,65,85,0.5);">
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-3 gap-4">
               <div>
-                <div class="text-xs text-white mb-1.5 font-medium">推荐起始时刻 (t0)</div>
-                <el-input-number v-model="processParams.t0" :precision="4" :step="0.0005" size="small" class="w-full" controls-position="right" />
+                <div class="text-xs text-white mb-1.5 font-medium">起始时刻 t₀ (s)</div>
+                <el-input-number v-model="processParams.t0" :precision="4" :step="0.001" size="small" class="w-full" controls-position="right" />
               </div>
               <div>
-                <div class="text-xs text-white mb-1.5 font-medium">采样步长 (Δt)</div>
-                <el-input v-model="processParams.dt" size="small" disabled placeholder="5e-4" />
+                <div class="text-xs text-white mb-1.5 font-medium">结束时刻 tₑ (s)</div>
+                <el-input-number v-model="processParams.tEnd" :precision="4" :step="0.01" size="small" class="w-full" controls-position="right" />
+              </div>
+              <div>
+                <div class="text-xs text-white mb-1.5 font-medium">采样步长 Δt (s)</div>
+                <el-input v-model="processParams.dt" size="small" disabled />
               </div>
             </div>
             <div class="flex justify-end">
-              <button @click="handleProcess('split')" :disabled="isProcessing"
+              <button @click="handleProcess('cut')" :disabled="isProcessing"
                 class="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:scale-105 disabled:opacity-50"
                 style="background:linear-gradient(135deg,#0891b2,#0ea5e9); border:1px solid rgba(14,165,233,0.4);">
                 <el-icon size="14"><Scissor /></el-icon>执行物理步长切分
@@ -61,19 +77,20 @@
         </div>
       </el-card>
 
-      <!-- Step 2 -->
+      <!-- Step 2: 数据划分 -->
       <el-card style="background:rgba(10,18,36,0.85); border:1px solid rgba(99,102,241,0.2);">
         <template #header>
           <div class="flex items-center gap-2.5">
             <span class="inline-flex items-center justify-center w-5 h-5 rounded text-xs font-bold text-white flex-shrink-0"
                   style="background:linear-gradient(135deg,#4f46e5,#818cf8);">2</span>
             <span class="text-white font-semibold text-sm">. 数据集拓扑划分</span>
-            <span class="text-slate-400 text-xs ml-1">· Topology Partition</span>
+            <span class="text-slate-400 text-xs ml-1">· Train / Test Split</span>
           </div>
         </template>
         <div class="space-y-4">
           <p style="color:#e2e8f0; font-size:14px; line-height:1.6;">
-            基于均匀采样与随机打散，确保训练集与测试集在磁场空间拓扑上具有平衡性。
+            基于均匀采样与随机打散，确保训练集与测试集在
+            <span class="text-indigo-300 font-semibold">{{ outputVarName }}</span>空间拓扑上具有平衡性。
           </p>
           <div class="p-4 rounded-xl space-y-4" style="background:rgba(2,8,23,0.6); border:1px solid rgba(51,65,85,0.5);">
             <div>
@@ -85,7 +102,7 @@
                          style="--el-slider-main-bg-color:#6366f1;" />
             </div>
             <div class="flex justify-end">
-              <button @click="handleProcess('partition')" :disabled="isProcessing"
+              <button @click="handleProcess('split')" :disabled="isProcessing"
                 class="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:scale-105 disabled:opacity-50"
                 style="background:linear-gradient(135deg,#4f46e5,#818cf8); border:1px solid rgba(99,102,241,0.4);">
                 <el-icon size="14"><Share /></el-icon>同步划分索引
@@ -95,7 +112,7 @@
         </div>
       </el-card>
 
-      <!-- Step 3 -->
+      <!-- Step 3: 归一化 -->
       <el-card style="background:rgba(10,18,36,0.85); border:1px solid rgba(16,185,129,0.2);">
         <template #header>
           <div class="flex items-center gap-2.5">
@@ -107,25 +124,27 @@
         </template>
         <div class="space-y-4">
           <p style="color:#e2e8f0; font-size:14px; line-height:1.6;">
-            对电参量（kV/A）与磁感应强度（T）进行 Z-Score 映射，通过存储统计算子确保在线预测的一致性。
+            对输入激励量进行 Z-Score 映射，通过存储统计算子 (μ, σ) 确保在线预测的一致性。
           </p>
           <div class="p-4 rounded-xl space-y-4" style="background:rgba(2,8,23,0.6); border:1px solid rgba(51,65,85,0.5);">
             <div class="flex items-center gap-2 p-2.5 rounded-lg" style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.2);">
               <el-icon style="color:#34d399;" size="14"><InfoFilled /></el-icon>
-              <span class="text-emerald-300 text-xs font-mono">检测到物理单位：Voltage:V, Current:A, B:Tesla</span>
+              <span class="text-emerald-300 text-xs font-mono">
+                检测到输入变量：{{ inputVarSummary }}
+              </span>
             </div>
             <div class="flex justify-end">
               <button @click="handleProcess('normalize')" :disabled="isProcessing"
                 class="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:scale-105 disabled:opacity-50"
                 style="background:linear-gradient(135deg,#059669,#10b981); border:1px solid rgba(16,185,129,0.4);">
-                <el-icon size="14"><Odometer /></el-icon>计算统计算子 (Mu/Sigma)
+                <el-icon size="14"><Odometer /></el-icon>计算统计算子 (μ/σ)
               </button>
             </div>
           </div>
         </div>
       </el-card>
 
-      <!-- Step 4 -->
+      <!-- Step 4: PCA 降维 -->
       <el-card style="background:rgba(10,18,36,0.85); border:1px solid rgba(168,85,247,0.2);">
         <template #header>
           <div class="flex items-center gap-2.5">
@@ -137,17 +156,20 @@
         </template>
         <div class="space-y-4">
           <p style="color:#e2e8f0; font-size:14px; line-height:1.6;">
-            对 1241 维空间测点进行主成分提取，在保障 99%+ 方差覆盖的前提下，将特征空间压缩至核心维度。
+            对 <span class="text-purple-300 font-bold">{{ spatialPoints }}</span> 维
+            <span class="text-purple-300">{{ outputVarName }}</span>空间测点进行主成分提取，将特征空间压缩至核心维度。
           </p>
           <div class="p-4 rounded-xl space-y-4" style="background:rgba(2,8,23,0.6); border:1px solid rgba(51,65,85,0.5);">
             <div class="flex items-center gap-4">
               <div class="flex-1">
-                <div class="text-xs text-white mb-1.5 font-medium">主成分节点数</div>
-                <el-input-number v-model="processParams.pcaNodes" :min="1" :max="200" size="small" class="w-full" controls-position="right" />
+                <div class="text-xs text-white mb-1.5 font-medium">主成分数</div>
+                <el-input-number v-model="processParams.pcaComponents" :min="1" :max="500" size="small" class="w-full" controls-position="right" />
               </div>
               <div class="text-center">
-                <div class="text-xs text-slate-400 mb-1">预估解释度</div>
-                <div class="text-purple-300 font-bold font-mono text-sm">99.8%</div>
+                <div class="text-xs text-slate-400 mb-1">目标压缩</div>
+                <div class="text-purple-300 font-bold font-mono text-sm">
+                  {{ spatialPoints }} → {{ processParams.pcaComponents }}
+                </div>
               </div>
             </div>
             <div class="flex justify-end">
@@ -183,58 +205,93 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { Scissor, Share, Odometer, MagicStick, InfoFilled, DataAnalysis, Monitor } from '@element-plus/icons-vue';
 import { ElNotification, ElMessage } from 'element-plus';
+import DatasetSelector from '../../components/DatasetSelector.vue';
 
+const API = 'http://127.0.0.1:5000/api/dataset';
+
+const selectorRef = ref(null);
+const activeDataset = ref(null);
 const isProcessing = ref(false);
 const processLogs = ref([]);
 
 const processParams = reactive({
-  t0: 0.0400,
-  dt: 5e-4,
+  t0: 0.04,
+  tEnd: 0.1,
+  dt: '5e-4',
   splitRatio: 0.8,
-  pcaNodes: 60
+  pcaComponents: 60,
 });
 
+// ---- Computed: 动态描述信息 ----
+const DEVICE_MAP = { transformer:'变压器', reactor:'电抗器', motor:'电机', gis:'GIS', cable:'电缆', busbar:'母线', other:'其他' };
+const FIELD_MAP = { magnetic:'磁场', temperature:'温度场', stress:'应力场', electric:'电场', flow:'流场', other:'物理场' };
+const deviceLabel = computed(() => DEVICE_MAP[activeDataset.value?.deviceType] || '设备');
+const fieldLabel = computed(() => FIELD_MAP[activeDataset.value?.fieldType] || '物理场');
+const outputVarName = computed(() => activeDataset.value?.outputVariable?.name || '场量');
+const spatialPoints = computed(() => activeDataset.value?.outputVariable?.spatialPoints || '?');
+
+const inputVarSummary = computed(() => {
+  const vars = activeDataset.value?.inputVariables || [];
+  if (vars.length === 0) return '无输入变量定义';
+  return vars.map(v => `${v.name}:${v.unit}`).join(', ');
+});
+
+function onDatasetChange(ds) {
+  activeDataset.value = ds;
+  if (ds?.processConfig) {
+    processParams.t0 = ds.processConfig.t0 ?? 0.04;
+    processParams.tEnd = ds.processConfig.tEnd ?? 0.1;
+    processParams.dt = String(ds.processConfig.dt ?? ds.timeStep ?? 5e-4);
+    processParams.splitRatio = ds.processConfig.splitRatio ?? 0.8;
+    processParams.pcaComponents = ds.processConfig.pcaComponents ?? 60;
+  }
+  addLog(`已切换数据集：${ds?.name || '无'}`);
+}
+
 const addLog = (msg) => {
-  const time = new Date().toLocaleTimeString();
-  processLogs.value.unshift({ time, msg });
+  processLogs.value.unshift({ time: new Date().toLocaleTimeString(), msg });
 };
 
 const autoDetectStable = async () => {
-  addLog("正在启动自适应稳态识别算法 (RMSE-based)...");
+  if (!activeDataset.value) return;
+  addLog("正在启动自适应稳态识别算法...");
   try {
-    const response = await fetch('http://127.0.0.1:5000/api/data/auto-detect', { method: 'POST' });
-    const data = await response.json();
+    const r = await fetch(`${API}/${activeDataset.value.id}/auto-detect`, { method: 'POST' });
+    const data = await r.json();
     if (data.t0 !== undefined) {
       processParams.t0 = data.t0;
       addLog(`识别成功：${data.suggested_msg}`);
       ElMessage.success("已自动提取稳态起始时间");
     } else {
-      addLog(`算法识别异常: ${data.error || '提取失败'}`);
-      ElMessage.error("识别失败，请确保已上传电参量原始数据");
+      addLog(`识别异常: ${data.error || '提取失败'}`);
+      ElMessage.error("识别失败");
     }
   } catch (error) {
-    addLog(`算法识别异常: ${error.message}`);
-    ElMessage.error("识别失败，请确保已上传电参量原始数据");
+    addLog(`识别异常: ${error.message}`);
+    ElMessage.error("识别失败，请确保后端服务运行中");
   }
 };
 
-const handleProcess = async (type) => {
+const handleProcess = async (step) => {
+  if (!activeDataset.value) return;
   isProcessing.value = true;
-  const labels = { split: '数据截取与切分', partition: '训练/测试集划分', normalize: '归一化处理', pca: 'PCA 降维训练' };
-  addLog(`同步后端执行: ${labels[type]}...`);
+  const labels = { cut: '数据截取与切分', split: '训练/测试集划分', normalize: '归一化处理', pca: 'PCA 降维训练' };
+  addLog(`同步后端执行: ${labels[step]}...`);
   try {
-    const response = await fetch('http://127.0.0.1:5000/api/data/execute', {
+    const r = await fetch(`${API}/${activeDataset.value.id}/process`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type, params: processParams })
+      body: JSON.stringify({ step, params: processParams }),
     });
-    const result = await response.json();
+    const result = await r.json();
     if (result.status === 'success') {
-      addLog(`${labels[type]} 执行完成: ${result.msg}`);
+      addLog(`${labels[step]} 执行完成: ${result.msg}`);
       ElNotification({ title: '处理成功', message: result.msg, type: 'success' });
+      // 刷新数据集元信息
+      await refreshDataset();
     } else {
       addLog(`执行出错: ${result.error || '处理失败'}`);
       ElNotification({ title: '执行失败', message: result.error || '处理失败', type: 'error' });
@@ -246,6 +303,15 @@ const handleProcess = async (type) => {
     isProcessing.value = false;
   }
 };
+
+async function refreshDataset() {
+  if (!activeDataset.value) return;
+  try {
+    const r = await fetch(`${API}/${activeDataset.value.id}`);
+    const d = await r.json();
+    activeDataset.value = d.dataset;
+  } catch { /* ignore */ }
+}
 </script>
 
 <style scoped>

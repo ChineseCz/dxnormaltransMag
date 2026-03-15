@@ -2,30 +2,19 @@
   <div class="p-6 space-y-5 min-h-full">
 
     <!-- Page Header -->
-    <div class="flex justify-between items-start">
-      <div class="flex items-center gap-4">
-        <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-             style="background:linear-gradient(135deg,#1d4ed8,#4f46e5); box-shadow:0 0 20px rgba(59,130,246,0.4);">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <circle cx="4" cy="12" r="2.5" fill="#93c5fd"/>
-            <circle cx="12" cy="5" r="2.5" fill="#60a5fa"/>
-            <circle cx="20" cy="8" r="2.5" fill="#60a5fa"/>
-            <circle cx="12" cy="19" r="2.5" fill="#93c5fd"/>
-            <circle cx="20" cy="16" r="2.5" fill="#60a5fa"/>
-            <line x1="6.3" y1="10.8" x2="10" y2="6.8" stroke="white" stroke-width="1.2"/>
-            <line x1="14" y1="5.8" x2="18" y2="8.5" stroke="white" stroke-width="1.2"/>
-            <line x1="6.3" y1="13.2" x2="10" y2="17.3" stroke="white" stroke-width="1.2"/>
-            <line x1="14" y1="18" x2="18" y2="16.5" stroke="white" stroke-width="1.2"/>
-          </svg>
-        </div>
-        <div>
-          <div class="section-badge mb-1.5">
-            <span style="width:6px;height:6px;background:#3b82f6;border-radius:50%;display:inline-block;"></span>
-            Model Architecture
+    <div class="flex justify-between items-center">
+      <div>
+        <div class="flex items-center gap-3">
+          <div class="rounded-xl flex items-center justify-center flex-shrink-0"
+               style="width:36px;height:36px;background:linear-gradient(135deg,#1d4ed8,#4f46e5); box-shadow:0 0 20px rgba(59,130,246,0.4);">
+            <el-icon size="20" style="color:white;"><Operation /></el-icon>
           </div>
-          <h1 class="text-2xl font-bold text-white tracking-tight">模型架构设计</h1>
-          <p class="text-slate-400 text-sm mt-0.5">深度学习 / 机器学习模型拓扑结构与超参数配置</p>
+          <h1 class="text-2xl font-extrabold tracking-tight"
+              style="background:linear-gradient(90deg,#60a5fa,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+            模型架构设计
+          </h1>
         </div>
+        <p class="text-slate-500 text-xs mt-1.5 ml-[48px]">深度学习 / 机器学习模型拓扑结构与超参数配置</p>
       </div>
       <button @click="saveConfig"
               class="btn-glow flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:scale-105"
@@ -33,6 +22,18 @@
         <el-icon><Checked /></el-icon>
         保存全局配置
       </button>
+    </div>
+
+    <!-- Dataset Selector Bar -->
+    <div class="p-4 rounded-xl" style="background:rgba(10,18,36,0.85); border:1px solid rgba(20,184,166,0.2);">
+      <DatasetSelector ref="dsSelectorRef" @change="onDatasetChange" />
+      <div v-if="activeDataset" class="flex items-center gap-3 mt-2">
+        <span class="text-slate-500 text-[11px]">模型输入/输出维度将从数据集自动获取：</span>
+        <span class="text-blue-300 font-mono text-xs font-bold">{{ activeInputDim }}D → {{ activeOutputDim }}D</span>
+        <span v-if="activeRawOutputDim && activeRawOutputDim !== activeOutputDim" class="text-slate-500 text-[11px]">
+          (原始 {{ activeRawOutputDim }} 维，PCA 压缩至 {{ activeOutputDim }} 维)
+        </span>
+      </div>
     </div>
 
     <!-- Model Type Selector -->
@@ -91,11 +92,11 @@
               </div>
               <div class="flex items-center gap-2">
                 <span class="text-slate-400 text-xs">维度:</span>
-                <span class="text-blue-300 font-bold font-mono text-lg">{{ dnnConfig.inputDim }}</span>
+                <span class="text-blue-300 font-bold font-mono text-lg">{{ activeInputDim }}</span>
               </div>
               <div class="text-right">
-                <div class="text-slate-400 text-xs">磁芯位置 (x, y, z)</div>
-                <div class="text-slate-500 text-[11px]">+ 激励电流 I</div>
+                <div class="text-slate-400 text-xs">{{ inputDimDesc }}</div>
+                <div class="text-slate-500 text-[11px]">由数据集定义</div>
               </div>
             </div>
             <TransitionGroup name="layer-list">
@@ -133,11 +134,11 @@
               </div>
               <div class="flex items-center gap-2">
                 <span class="text-slate-400 text-xs">维度:</span>
-                <span class="text-green-300 font-bold font-mono text-lg">{{ dnnConfig.outputDim }}</span>
+                <span class="text-green-300 font-bold font-mono text-lg">{{ activeOutputDim }}</span>
               </div>
               <div class="text-right">
-                <div class="text-slate-400 text-xs">1241 个场点坐标</div>
-                <div class="text-slate-500 text-[11px]">磁感应强度分布</div>
+                <div class="text-slate-400 text-xs">{{ outputDimDesc }}</div>
+                <div class="text-slate-500 text-[11px]">{{ outputUnitDesc }}</div>
               </div>
             </div>
           </div>
@@ -535,8 +536,60 @@ import { reactive, ref, computed } from 'vue';
 import { ElMessage } from 'element-plus';
 import {
   Checked, CirclePlus, Delete, Connection, Setting, Monitor,
-  Grid, Timer, Aim, Share
+  Grid, Timer, Aim, Share, Operation
 } from '@element-plus/icons-vue';
+import DatasetSelector from '../../components/DatasetSelector.vue';
+
+// ---- Dataset state ----
+const dsSelectorRef = ref(null);
+const activeDataset = ref(null);
+
+const activeInputDim = computed(() => {
+  const ds = activeDataset.value;
+  if (ds?.trainInfo?.inputDim) return ds.trainInfo.inputDim;
+  return ds?.inputVariables?.length || 4;
+});
+
+const activeOutputDim = computed(() => {
+  const ds = activeDataset.value;
+  if (ds?.trainInfo?.outputDim) return ds.trainInfo.outputDim;
+  if (ds?.processConfig?.pcaComponents) return ds.processConfig.pcaComponents;
+  return ds?.outputVariable?.spatialPoints || 1241;
+});
+
+const activeRawOutputDim = computed(() => {
+  const ds = activeDataset.value;
+  return ds?.trainInfo?.rawOutputDim || ds?.outputVariable?.spatialPoints || null;
+});
+
+const inputDimDesc = computed(() => {
+  const vars = activeDataset.value?.inputVariables || [];
+  if (vars.length === 0) return '输入特征';
+  return vars.map(v => `${v.name}(${v.unit})`).join(', ');
+});
+
+const outputDimDesc = computed(() => {
+  const raw = activeRawOutputDim.value;
+  const pca = activeOutputDim.value;
+  if (raw && raw !== pca) return `${raw} 场点 → PCA ${pca} 维`;
+  return `${pca} 个场点`;
+});
+
+const outputUnitDesc = computed(() => {
+  const ds = activeDataset.value;
+  const name = ds?.outputVariable?.name || '物理场';
+  const unit = ds?.outputVariable?.unit || '';
+  return unit ? `${name}分布 (${unit})` : `${name}分布`;
+});
+
+function onDatasetChange(ds) {
+  activeDataset.value = ds;
+  // 自动同步维度到各模型配置
+  dnnConfig.inputDim = activeInputDim.value;
+  dnnConfig.outputDim = activeOutputDim.value;
+  cnnConfig.outputDim = activeOutputDim.value;
+  lstmConfig.outputDim = activeOutputDim.value;
+}
 
 const selectedModel = ref('dnn');
 
@@ -642,14 +695,22 @@ const isDLModel = computed(() => ['dnn', 'cnn', 'lstm'].includes(selectedModel.v
 const currentModelInfo = computed(() => modelTypes.find(m => m.id === selectedModel.value) || modelTypes[0]);
 const estimatedParams = computed(() => {
   if (selectedModel.value !== 'dnn') return 'N/A';
-  const layers = [dnnConfig.inputDim, ...dnnConfig.hiddenLayers.map(l => l.units), dnnConfig.outputDim];
+  const layers = [activeInputDim.value, ...dnnConfig.hiddenLayers.map(l => l.units), activeOutputDim.value];
   let total = 0;
   for (let i = 0; i < layers.length - 1; i++) total += layers[i] * layers[i + 1] + layers[i + 1];
   return total > 1e6 ? (total / 1e6).toFixed(1) + 'M' : (total / 1e3).toFixed(1) + 'K';
 });
 
 const saveConfig = () => {
-  const config = { modelType: selectedModel.value, dnn: dnnConfig, cnn: cnnConfig, lstm: lstmConfig, svm: svmConfig, rf: rfConfig, dlParams, mlParams };
+  const config = {
+    modelType: selectedModel.value,
+    datasetId: activeDataset.value?.id || null,
+    inputDim: activeInputDim.value,
+    outputDim: activeOutputDim.value,
+    rawOutputDim: activeRawOutputDim.value,
+    dnn: dnnConfig, cnn: cnnConfig, lstm: lstmConfig, svm: svmConfig, rf: rfConfig,
+    dlParams, mlParams,
+  };
   localStorage.setItem('model_config', JSON.stringify(config));
   ElMessage({ message: `${selectedModel.value.toUpperCase()} 配置已同步至训练引擎`, type: 'success', duration: 2000 });
 };

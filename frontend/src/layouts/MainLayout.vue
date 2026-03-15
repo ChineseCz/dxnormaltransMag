@@ -54,9 +54,15 @@
                   <span class="text-slate-100 font-semibold" style="font-size:17px;">用户中心</span>
                 </div>
               </template>
-              <el-menu-item index="/user-management"><span style="font-size:15px;">用户管理</span></el-menu-item>
-              <el-menu-item index="/role-management"><span style="font-size:15px;">角色管理</span></el-menu-item>
-              <el-menu-item index="/dept-management"><span style="font-size:15px;">部门管理</span></el-menu-item>
+              <el-menu-item index="/user-management">
+                <el-icon size="15"><User /></el-icon><span class="ml-1" style="font-size:15px;">用户管理</span>
+              </el-menu-item>
+              <el-menu-item index="/role-management">
+                <el-icon size="15"><UserFilled /></el-icon><span class="ml-1" style="font-size:15px;">角色管理</span>
+              </el-menu-item>
+              <el-menu-item index="/dept-management">
+                <el-icon size="15"><OfficeBuilding /></el-icon><span class="ml-1" style="font-size:15px;">部门管理</span>
+              </el-menu-item>
             </el-sub-menu>
 
             <!-- 数据中心 -->
@@ -69,8 +75,15 @@
                   <span class="text-slate-100 font-semibold" style="font-size:17px;">数据中心</span>
                 </div>
               </template>
-              <el-menu-item index="/data-upload"><span style="font-size:15px;">数据上传</span></el-menu-item>
-              <el-menu-item index="/data-processing"><span style="font-size:15px;">数据处理</span></el-menu-item>
+              <el-menu-item index="/dataset-manage">
+                <el-icon size="15"><FolderOpened /></el-icon><span class="ml-1" style="font-size:15px;">数据集管理</span>
+              </el-menu-item>
+              <el-menu-item index="/data-upload">
+                <el-icon size="15"><Upload /></el-icon><span class="ml-1" style="font-size:15px;">数据上传</span>
+              </el-menu-item>
+              <el-menu-item index="/data-processing">
+                <el-icon size="15"><Cpu /></el-icon><span class="ml-1" style="font-size:15px;">数据处理</span>
+              </el-menu-item>
             </el-sub-menu>
 
             <!-- 模型训练 -->
@@ -98,24 +111,49 @@
             </el-sub-menu>
 
             <!-- 实时预测 -->
-            <el-menu-item index="/real-time-prediction">
-              <div class="flex items-center gap-3">
-                <div class="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0" style="background:rgba(245,158,11,0.2);">
-                  <el-icon style="color:#fbbf24;" size="17"><Odometer /></el-icon>
+            <el-sub-menu index="4">
+              <template #title>
+                <div class="flex items-center gap-3">
+                  <div class="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0" style="background:rgba(245,158,11,0.2);">
+                    <el-icon style="color:#fbbf24;" size="17"><Odometer /></el-icon>
+                  </div>
+                  <span class="text-slate-100 font-semibold" style="font-size:17px;">实时预测</span>
                 </div>
-                <span class="text-slate-100 font-semibold" style="font-size:17px;">实时预测</span>
-              </div>
-            </el-menu-item>
+              </template>
+              <el-menu-item index="/predict-setup">
+                <el-icon size="15"><Setting /></el-icon><span class="ml-1" style="font-size:15px;">预测配置</span>
+              </el-menu-item>
+              <el-menu-item index="/predict-result">
+                <el-icon size="15"><DataLine /></el-icon><span class="ml-1" style="font-size:15px;">结果可视化</span>
+              </el-menu-item>
+              <el-menu-item index="/predict-compare">
+                <el-icon size="15"><Switch /></el-icon><span class="ml-1" style="font-size:15px;">多次对比</span>
+              </el-menu-item>
+              <el-menu-item index="/predict-history">
+                <el-icon size="15"><Clock /></el-icon><span class="ml-1" style="font-size:15px;">预测记录</span>
+              </el-menu-item>
+            </el-sub-menu>
 
             <!-- AI 助手 -->
-            <el-menu-item index="/ai-assistant">
-              <div class="flex items-center gap-3">
-                <div class="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0" style="background:rgba(236,72,153,0.2);">
-                  <el-icon style="color:#f472b6;" size="17"><MagicStick /></el-icon>
+            <el-sub-menu index="5">
+              <template #title>
+                <div class="flex items-center gap-3">
+                  <div class="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0" style="background:rgba(236,72,153,0.2);">
+                    <el-icon style="color:#f472b6;" size="17"><MagicStick /></el-icon>
+                  </div>
+                  <span class="text-slate-100 font-semibold" style="font-size:17px;">AI 助手</span>
                 </div>
-                <span class="text-slate-100 font-semibold" style="font-size:17px;">AI 助手</span>
-              </div>
-            </el-menu-item>
+              </template>
+              <el-menu-item index="/ai-chat">
+                <el-icon size="15"><ChatDotRound /></el-icon><span class="ml-1" style="font-size:15px;">智能对话</span>
+              </el-menu-item>
+              <el-menu-item index="/ai-knowledge">
+                <el-icon size="15"><Collection /></el-icon><span class="ml-1" style="font-size:15px;">知识库</span>
+              </el-menu-item>
+              <el-menu-item index="/ai-agent">
+                <el-icon size="15"><SetUp /></el-icon><span class="ml-1" style="font-size:15px;">Agent 工作台</span>
+              </el-menu-item>
+            </el-sub-menu>
           </el-menu>
         </div>
 
@@ -173,13 +211,8 @@
       </el-container>
     </el-container>
 
-    <!-- Floating Chat Button -->
-    <div class="fixed bottom-8 right-8 z-50">
-      <el-button circle @click="openChat"
-        style="width:48px;height:48px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border:none;box-shadow:0 0 24px rgba(59,130,246,0.5);">
-        <el-icon size="20" style="color:white;"><ChatDotRound /></el-icon>
-      </el-button>
-    </div>
+    <!-- 全局 AI 浮窗对话 -->
+    <ChatDrawer />
   </div>
 </template>
 
@@ -188,12 +221,13 @@ import { ref, computed } from 'vue';
 import {
   User, DataAnalysis, Cpu, Odometer, MagicStick, ChatDotRound,
   Platform, Operation, VideoPlay, TrendCharts, Box,
-  Setting, Expand, Fold, HomeFilled,
+  Setting, Expand, Fold, HomeFilled, Switch, Clock, DataLine,
+  Collection, SetUp, UserFilled, OfficeBuilding, FolderOpened, Upload,
 } from '@element-plus/icons-vue';
+import ChatDrawer from '../components/ChatDrawer.vue';
 
 const isCollapsed = ref(false);
 const asideWidth = computed(() => (isCollapsed.value ? '64px' : '280px'));const toggleCollapse = () => { isCollapsed.value = !isCollapsed.value; };
-const openChat = () => {};
 </script>
 
 <style scoped>

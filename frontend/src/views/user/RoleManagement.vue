@@ -2,20 +2,19 @@
   <div class="p-6 space-y-5 min-h-full">
 
     <!-- Page Header -->
-    <div class="flex justify-between items-start">
-      <div class="flex items-center gap-4">
-        <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-             style="background:linear-gradient(135deg,#0ea5e9,#6366f1); box-shadow:0 0 20px rgba(14,165,233,0.35);">
-          <el-icon size="22" style="color:white;"><UserFilled /></el-icon>
-        </div>
-        <div>
-          <div class="section-badge mb-1.5">
-            <span style="width:6px;height:6px;background:#38bdf8;border-radius:50%;display:inline-block;"></span>
-            Role Management
+    <div class="flex justify-between items-center">
+      <div>
+        <div class="flex items-center gap-3">
+          <div class="rounded-xl flex items-center justify-center flex-shrink-0"
+               style="width:36px;height:36px;background:linear-gradient(135deg,#0ea5e9,#6366f1); box-shadow:0 0 20px rgba(14,165,233,0.35);">
+            <el-icon size="20" style="color:white;"><UserFilled /></el-icon>
           </div>
-          <h1 class="text-lg font-bold text-white tracking-tight">角色管理</h1>
-          <p class="text-slate-400 text-sm mt-0.5">管理系统角色与权限字符分配</p>
+          <h1 class="text-2xl font-extrabold tracking-tight"
+              style="background:linear-gradient(90deg,#38bdf8,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+            角色管理
+          </h1>
         </div>
+        <p class="text-slate-500 text-xs mt-1.5 ml-[48px]">管理系统角色与权限字符分配</p>
       </div>
       <button @click="handleAdd"
         class="btn-glow flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:scale-105"
