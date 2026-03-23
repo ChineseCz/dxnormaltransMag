@@ -20,7 +20,7 @@
         class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:scale-105 disabled:opacity-40"
         style="background:linear-gradient(135deg,#d97706,#f59e0b); border:1px solid rgba(245,158,11,0.4); box-shadow:0 0 16px rgba(217,119,6,0.35);">
         <el-icon><MagicStick /></el-icon>
-        一键识别稳态起点
+        数据流水线一键处理
       </button>
     </div>
 
@@ -40,16 +40,16 @@
         <template #header>
           <div class="flex items-center gap-2.5">
             <span class="inline-flex items-center justify-center w-5 h-5 rounded text-xs font-bold text-white flex-shrink-0"
-                  style="background:linear-gradient(135deg,#0891b2,#0ea5e9);">1</span>
-            <span class="text-white font-semibold text-sm">. 稳态周期自动截取</span>
-            <span class="text-slate-400 text-xs ml-1">· Cut & Extract</span>
+                  style="background:linear-gradient(135deg,#0891b2,#0ea5e9);"></span>
+            <span class="text-white font-semibold text-sm">时空矩阵数据集构建</span>
+            <span class="text-slate-400 text-xs ml-1"></span>
           </div>
         </template>
         <div class="space-y-4">
           <p style="color:#e2e8f0; font-size:14px; line-height:1.6;">
             从 <span class="text-cyan-300 font-semibold">{{ deviceLabel }}</span> 的
             <span class="text-cyan-300 font-semibold">{{ fieldLabel }}</span>仿真数据中，
-            自动提取稳定运行区间，消除暂态过程干扰。
+            提取稳定运行区间，并构建时空矩阵数据集。
           </p>
           <div class="p-4 rounded-xl space-y-4" style="background:rgba(2,8,23,0.6); border:1px solid rgba(51,65,85,0.5);">
             <div class="grid grid-cols-3 gap-4">
@@ -82,15 +82,15 @@
         <template #header>
           <div class="flex items-center gap-2.5">
             <span class="inline-flex items-center justify-center w-5 h-5 rounded text-xs font-bold text-white flex-shrink-0"
-                  style="background:linear-gradient(135deg,#4f46e5,#818cf8);">2</span>
-            <span class="text-white font-semibold text-sm">. 数据集拓扑划分</span>
-            <span class="text-slate-400 text-xs ml-1">· Train / Test Split</span>
+                  style="background:linear-gradient(135deg,#4f46e5,#818cf8);"></span>
+            <span class="text-white font-semibold text-sm">数据集拓扑划分</span>
+
           </div>
         </template>
         <div class="space-y-4">
           <p style="color:#e2e8f0; font-size:14px; line-height:1.6;">
             基于均匀采样与随机打散，确保训练集与测试集在
-            <span class="text-indigo-300 font-semibold">{{ outputVarName }}</span>空间拓扑上具有平衡性。
+            <span class="text-indigo-300 font-semibold">{{ outputVarName }}</span>空间 拓扑上具有平衡性。
           </p>
           <div class="p-4 rounded-xl space-y-4" style="background:rgba(2,8,23,0.6); border:1px solid rgba(51,65,85,0.5);">
             <div>
@@ -117,8 +117,8 @@
         <template #header>
           <div class="flex items-center gap-2.5">
             <span class="inline-flex items-center justify-center w-5 h-5 rounded text-xs font-bold text-white flex-shrink-0"
-                  style="background:linear-gradient(135deg,#059669,#10b981);">3</span>
-            <span class="text-white font-semibold text-sm">. 特征归一化与尺度变换</span>
+                  style="background:linear-gradient(135deg,#059669,#10b981);"></span>
+            <span class="text-white font-semibold text-sm">数据标准化</span>
             <span class="text-slate-400 text-xs ml-1">· Z-Score Normalization</span>
           </div>
         </template>
@@ -137,7 +137,7 @@
               <button @click="handleProcess('normalize')" :disabled="isProcessing"
                 class="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:scale-105 disabled:opacity-50"
                 style="background:linear-gradient(135deg,#059669,#10b981); border:1px solid rgba(16,185,129,0.4);">
-                <el-icon size="14"><Odometer /></el-icon>计算统计算子 (μ/σ)
+                <el-icon size="14"><Odometer /></el-icon>标准化 (μ/σ)
               </button>
             </div>
           </div>
@@ -149,14 +149,14 @@
         <template #header>
           <div class="flex items-center gap-2.5">
             <span class="inline-flex items-center justify-center w-5 h-5 rounded text-xs font-bold text-white flex-shrink-0"
-                  style="background:linear-gradient(135deg,#7c3aed,#a855f7);">4</span>
-            <span class="text-white font-semibold text-sm">. 高维场降维分析</span>
-            <span class="text-slate-400 text-xs ml-1">· Field PCA</span>
+                  style="background:linear-gradient(135deg,#7c3aed,#a855f7);"></span>
+            <span class="text-white font-semibold text-sm">物理场场降维分析</span>
+
           </div>
         </template>
         <div class="space-y-4">
           <p style="color:#e2e8f0; font-size:14px; line-height:1.6;">
-            对 <span class="text-purple-300 font-bold">{{ spatialPoints }}</span> 维
+            对 当前 1241 维
             <span class="text-purple-300">{{ outputVarName }}</span>空间测点进行主成分提取，将特征空间压缩至核心维度。
           </p>
           <div class="p-4 rounded-xl space-y-4" style="background:rgba(2,8,23,0.6); border:1px solid rgba(51,65,85,0.5);">
@@ -176,7 +176,7 @@
               <button @click="handleProcess('pca')" :disabled="isProcessing"
                 class="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:scale-105 disabled:opacity-50"
                 style="background:linear-gradient(135deg,#7c3aed,#a855f7); border:1px solid rgba(168,85,247,0.4);">
-                <el-icon size="14"><DataAnalysis /></el-icon>拟合投影矩阵
+                <el-icon size="14"><DataAnalysis /></el-icon>执行降维算子
               </button>
             </div>
           </div>

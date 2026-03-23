@@ -223,124 +223,100 @@
         </el-card>
       </template>
 
-      <!-- ===== LSTM ===== -->
-      <template v-if="selectedModel === 'lstm'">
-        <el-card class="xl:col-span-2" style="background:rgba(10,18,36,0.85); border:1px solid rgba(168,85,247,0.15);">
+      <!-- ===== PINN ===== -->
+      <template v-if="selectedModel === 'pinn'">
+        <el-card class="xl:col-span-2" style="background:rgba(10,18,36,0.85); border:1px solid rgba(20,184,166,0.15);">
           <template #header>
             <div class="flex justify-between items-center">
               <div class="flex items-center gap-2">
-                <div class="w-5 h-5 rounded flex items-center justify-center" style="background:rgba(168,85,247,0.2);">
-                  <el-icon style="color:#c084fc;" size="13"><Timer /></el-icon>
+                <div class="w-5 h-5 rounded flex items-center justify-center" style="background:rgba(20,184,166,0.18);">
+                  <el-icon style="color:#34d399;" size="13"><Connection /></el-icon>
                 </div>
-                <span class="text-slate-200 font-semibold text-sm">LSTM 时序记忆层设计</span>
+                <span class="text-slate-200 font-semibold text-sm">PINN 物理信息神经网络</span>
                 <span class="text-xs px-2 py-0.5 rounded-full ml-1"
-                      style="background:rgba(168,85,247,0.12); color:#d8b4fe; border:1px solid rgba(168,85,247,0.2);">
-                  {{ lstmConfig.layers.length }} 层
+                      style="background:rgba(20,184,166,0.12); color:#34d399; border:1px solid rgba(20,184,166,0.2);">
+                  {{ pinnConfig.hiddenLayers.length + 2 }} 层
                 </span>
               </div>
-              <button @click="addLstmLayer"
+              <button @click="addPinnLayer"
                       class="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all hover:scale-105"
-                      style="background:rgba(168,85,247,0.12); color:#c084fc; border:1px solid rgba(168,85,247,0.25);">
-                <el-icon size="13"><CirclePlus /></el-icon> 添加 LSTM 层
+                      style="background:rgba(20,184,166,0.12); color:#34d399; border:1px solid rgba(20,184,166,0.25);">
+                <el-icon size="13"><CirclePlus /></el-icon> 添加隐藏层
               </button>
             </div>
           </template>
           <div class="space-y-3">
+            <div class="layer-row" style="background:rgba(15,118,110,0.12); border-color:rgba(20,184,166,0.25);">
+              <div class="indicator-green"></div>
+              <div class="flex-1">
+                <div class="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mb-0.5">Input Layer</div>
+                <div class="text-slate-400 font-semibold text-sm">物理状态输入</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-slate-400 text-xs">维度:</span>
+                <span class="text-emerald-300 font-bold font-mono text-lg">{{ activeInputDim }}</span>
+              </div>
+              <div class="text-right">
+                <div class="text-slate-400 text-xs">包括坐标/边界条件</div>
+                <div class="text-slate-500 text-[11px]">由数据集定义</div>
+              </div>
+            </div>
             <TransitionGroup name="layer-list">
-              <div v-for="(layer, index) in lstmConfig.layers" :key="layer.id" class="layer-row group">
-                <div class="indicator-purple"></div>
+              <div v-for="(layer, index) in pinnConfig.hiddenLayers" :key="layer.id" class="layer-row group">
+                <div class="indicator-gray"></div>
                 <div style="min-width:90px;">
-                  <div class="text-[10px] font-bold uppercase tracking-widest text-purple-400 mb-0.5">LSTM {{ index + 1 }}</div>
-                  <div class="text-slate-400 font-medium text-sm">记忆单元层</div>
+                  <div class="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-0.5">Hidden {{ index + 1 }}</div>
+                  <div class="text-slate-400 font-medium text-sm">全连接层</div>
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="text-slate-500 text-xs">Units:</span>
-                  <el-input-number v-model="layer.units" :min="1" :max="1024" size="small" controls-position="right" style="width:100px;" />
+                  <span class="text-slate-500 text-xs">神经元:</span>
+                  <el-input-number v-model="layer.units" :min="1" :max="2048" size="small" controls-position="right" style="width:110px;" />
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="text-slate-500 text-xs">Dropout:</span>
-                  <el-input-number v-model="layer.dropout" :min="0" :max="0.9" :step="0.1" :precision="1" size="small" controls-position="right" style="width:85px;" />
+                  <span class="text-slate-500 text-xs">激活:</span>
+                  <el-select v-model="layer.activation" size="small" style="width:120px;">
+                    <el-option label="Tanh" value="tanh" />
+                    <el-option label="Sin" value="sin" />
+                    <el-option label="ReLU" value="relu" />
+                  </el-select>
                 </div>
-                <div class="flex items-center gap-1.5">
-                  <el-checkbox v-model="layer.bidirectional" size="small">
-                    <span class="text-slate-500 text-xs">双向 Bi</span>
-                  </el-checkbox>
-                </div>
-                <button @click="removeLstmLayer(index)"
+                <button @click="removePinnLayer(index)"
                         class="ml-auto opacity-0 group-hover:opacity-100 transition-all w-7 h-7 rounded-lg flex items-center justify-center"
                         style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#f87171;">
                   <el-icon size="13"><Delete /></el-icon>
                 </button>
               </div>
             </TransitionGroup>
-            <div class="layer-row" style="background:rgba(88,28,135,0.1); border-color:rgba(168,85,247,0.2);">
-              <div class="indicator-purple"></div>
+            <div class="layer-row" style="background:rgba(10,18,36,0.7); border-color:rgba(20,184,166,0.2);">
+              <div class="indicator-green"></div>
               <div class="flex-1">
-                <div class="text-[10px] font-bold uppercase tracking-widest text-purple-400 mb-0.5">Dense Output</div>
-                <div class="text-slate-400 text-sm">全连接输出头</div>
+                <div class="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mb-0.5">Loss Weights</div>
+                <div class="text-slate-400 text-sm">物理残差/边界权重</div>
               </div>
-              <div class="flex items-center gap-2">
-                <span class="text-slate-400 text-xs">输出维度:</span>
-                <span class="text-purple-300 font-mono font-bold">{{ lstmConfig.outputDim }}</span>
-              </div>
-            </div>
-          </div>
-        </el-card>
-      </template>
-
-      <!-- ===== SVM ===== -->
-      <template v-if="selectedModel === 'svm'">
-        <el-card class="xl:col-span-2" style="background:rgba(10,18,36,0.85); border:1px solid rgba(16,185,129,0.15);">
-          <template #header>
-            <div class="flex items-center gap-2">
-              <div class="w-5 h-5 rounded flex items-center justify-center" style="background:rgba(16,185,129,0.2);">
-                <el-icon style="color:#34d399;" size="13"><Aim /></el-icon>
-              </div>
-              <span class="text-slate-200 font-semibold text-sm">SVR 核函数与超参数配置</span>
-            </div>
-          </template>
-          <div class="space-y-5">
-            <div>
-              <div class="text-xs text-slate-400 mb-2.5 font-medium">核函数类型 (Kernel)</div>
-              <div class="grid grid-cols-4 gap-2">
-                <div v-for="k in svmKernels" :key="k.value"
-                     @click="svmConfig.kernel = k.value"
-                     class="cursor-pointer rounded-xl p-3 text-center transition-all hover:scale-105"
-                     :style="svmConfig.kernel === k.value
-                       ? 'background:rgba(16,185,129,0.18); border:1.5px solid #10b981;'
-                       : 'background:rgba(2,8,23,0.5); border:1px solid rgba(51,65,85,0.4);'">
-                  <div class="font-bold text-sm font-mono"
-                       :style="`color:${svmConfig.kernel === k.value ? '#34d399' : '#64748b'}`">{{ k.label }}</div>
-                  <div class="text-[10px] text-slate-600 mt-0.5">{{ k.desc }}</div>
+              <div class="grid grid-cols-2 gap-3 w-[320px]">
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-500 text-xs">PDE:</span>
+                  <el-input-number v-model="pinnConfig.lossWeights.pde" :min="0" :max="10" :step="0.1" :precision="1" size="small" controls-position="right" style="width:110px;" />
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-500 text-xs">BC:</span>
+                  <el-input-number v-model="pinnConfig.lossWeights.bc" :min="0" :max="10" :step="0.1" :precision="1" size="small" controls-position="right" style="width:110px;" />
                 </div>
               </div>
             </div>
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <div class="text-xs text-slate-400 mb-1.5 font-medium">正则化参数 C</div>
-                <el-input-number v-model="svmConfig.C" :min="0.001" :max="1000" :step="0.1" :precision="3" class="w-full" controls-position="right" />
-                <div class="text-[10px] text-slate-600 mt-1">控制训练误差与模型复杂度的权衡</div>
+            <div class="layer-row" style="background:rgba(6,78,59,0.12); border-color:rgba(16,185,129,0.25);">
+              <div class="indicator-green"></div>
+              <div class="flex-1">
+                <div class="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mb-0.5">Output Layer</div>
+                <div class="text-slate-400 font-semibold text-sm">物理场预测层</div>
               </div>
-              <div>
-                <div class="text-xs text-slate-400 mb-1.5 font-medium">容忍误差 ε (Epsilon)</div>
-                <el-input-number v-model="svmConfig.epsilon" :min="0" :max="1" :step="0.01" :precision="3" class="w-full" controls-position="right" />
-                <div class="text-[10px] text-slate-600 mt-1">不敏感区间，影响支持向量数量</div>
+              <div class="flex items-center gap-2">
+                <span class="text-slate-400 text-xs">维度:</span>
+                <span class="text-emerald-300 font-bold font-mono text-lg">{{ activeOutputDim }}</span>
               </div>
-              <div>
-                <div class="text-xs text-slate-400 mb-1.5 font-medium">核宽度 γ (Gamma)</div>
-                <el-select v-model="svmConfig.gamma" class="w-full">
-                  <el-option label="scale (推荐)" value="scale" />
-                  <el-option label="auto" value="auto" />
-                  <el-option label="自定义数值" value="custom" />
-                </el-select>
-              </div>
-              <div v-if="svmConfig.gamma === 'custom'">
-                <div class="text-xs text-slate-400 mb-1.5 font-medium">γ 自定义值</div>
-                <el-input-number v-model="svmConfig.gammaVal" :min="1e-6" :max="10" :step="0.001" :precision="4" class="w-full" controls-position="right" />
-              </div>
-              <div v-if="svmConfig.kernel === 'poly'">
-                <div class="text-xs text-slate-400 mb-1.5 font-medium">多项式阶数 (Degree)</div>
-                <el-input-number v-model="svmConfig.degree" :min="2" :max="8" :step="1" class="w-full" controls-position="right" />
+              <div class="text-right">
+                <div class="text-slate-400 text-xs">符合物理约束的解</div>
+                <div class="text-slate-500 text-[11px]">{{ outputUnitDesc }}</div>
               </div>
             </div>
           </div>
@@ -507,7 +483,7 @@
             </div>
             <div v-if="!isDLModel" class="flex justify-between items-center">
               <span class="text-slate-500 text-xs">算法类型</span>
-              <span class="text-slate-300 text-xs">{{ selectedModel === 'svm' ? '核方法回归 (SVR)' : '集成学习 (Bagging)' }}</span>
+              <span class="text-slate-300 text-xs">集成学习 (Bagging)</span>
             </div>
             <div class="flex justify-between items-center">
               <span class="text-slate-500 text-xs">任务类型</span>
@@ -536,7 +512,7 @@ import { reactive, ref, computed } from 'vue';
 import { ElMessage } from 'element-plus';
 import {
   Checked, CirclePlus, Delete, Connection, Setting, Monitor,
-  Grid, Timer, Aim, Share, Operation
+  Grid, Share, Operation
 } from '@element-plus/icons-vue';
 import DatasetSelector from '../../components/DatasetSelector.vue';
 
@@ -588,7 +564,8 @@ function onDatasetChange(ds) {
   dnnConfig.inputDim = activeInputDim.value;
   dnnConfig.outputDim = activeOutputDim.value;
   cnnConfig.outputDim = activeOutputDim.value;
-  lstmConfig.outputDim = activeOutputDim.value;
+  pinnConfig.inputDim = activeInputDim.value;
+  pinnConfig.outputDim = activeOutputDim.value;
 }
 
 const selectedModel = ref('dnn');
@@ -607,22 +584,16 @@ const modelTypes = [
     iconBg: 'rgba(99,102,241,0.1)', iconBgActive: 'rgba(99,102,241,0.25)', icon: Grid,
   },
   {
-    id: 'lstm', label: 'LSTM', desc: '时序记忆网络',
-    color: '#c084fc', activeBg: 'rgba(88,28,135,0.3)',
-    borderColor: 'rgba(168,85,247,0.5)', glow: 'rgba(168,85,247,0.2)',
-    iconBg: 'rgba(168,85,247,0.1)', iconBgActive: 'rgba(168,85,247,0.25)', icon: Timer,
-  },
-  {
-    id: 'svm', label: 'SVM', desc: '支持向量回归',
-    color: '#34d399', activeBg: 'rgba(6,78,59,0.3)',
-    borderColor: 'rgba(16,185,129,0.5)', glow: 'rgba(16,185,129,0.2)',
-    iconBg: 'rgba(16,185,129,0.1)', iconBgActive: 'rgba(16,185,129,0.25)', icon: Aim,
-  },
-  {
     id: 'rf', label: 'RF', desc: '随机森林集成',
     color: '#fbbf24', activeBg: 'rgba(120,53,15,0.3)',
     borderColor: 'rgba(245,158,11,0.5)', glow: 'rgba(245,158,11,0.2)',
     iconBg: 'rgba(245,158,11,0.1)', iconBgActive: 'rgba(245,158,11,0.25)', icon: Share,
+  },
+  {
+    id: 'pinn', label: 'PINN', desc: '物理约束神经网络',
+    color: '#34d399', activeBg: 'rgba(6,78,59,0.3)',
+    borderColor: 'rgba(16,185,129,0.5)', glow: 'rgba(16,185,129,0.2)',
+    iconBg: 'rgba(16,185,129,0.1)', iconBgActive: 'rgba(16,185,129,0.25)', icon: Connection,
   },
 ];
 
@@ -655,28 +626,21 @@ const addCnnLayer = () => {
 };
 const removeCnnLayer = (i) => cnnConfig.convLayers.splice(i, 1);
 
-// ---- LSTM ----
-const lstmConfig = reactive({
-  outputDim: 1241,
-  layers: [
-    { id: 1, units: 64, dropout: 0.2, bidirectional: false },
-    { id: 2, units: 128, dropout: 0.2, bidirectional: false },
+// ---- PINN ----
+const pinnConfig = reactive({
+  inputDim: 4, outputDim: 1241,
+  hiddenLayers: [
+    { id: 1, units: 64, activation: 'tanh' },
+    { id: 2, units: 64, activation: 'tanh' },
+    { id: 3, units: 64, activation: 'tanh' },
   ],
+  lossWeights: { pde: 1.0, bc: 1.0 },
 });
-const addLstmLayer = () => {
-  const newId = lstmConfig.layers.length > 0 ? Math.max(...lstmConfig.layers.map(l => l.id)) + 1 : 1;
-  lstmConfig.layers.push({ id: newId, units: 64, dropout: 0.2, bidirectional: false });
+const addPinnLayer = () => {
+  const newId = pinnConfig.hiddenLayers.length > 0 ? Math.max(...pinnConfig.hiddenLayers.map(l => l.id)) + 1 : 1;
+  pinnConfig.hiddenLayers.push({ id: newId, units: 64, activation: 'tanh' });
 };
-const removeLstmLayer = (i) => lstmConfig.layers.splice(i, 1);
-
-// ---- SVM ----
-const svmConfig = reactive({ kernel: 'rbf', C: 1.0, epsilon: 0.1, gamma: 'scale', gammaVal: 0.01, degree: 3 });
-const svmKernels = [
-  { value: 'rbf',     label: 'RBF',     desc: '高斯核 (推荐)' },
-  { value: 'linear',  label: 'Linear',  desc: '线性核' },
-  { value: 'poly',    label: 'Poly',    desc: '多项式核' },
-  { value: 'sigmoid', label: 'Sigmoid', desc: 'S 型核' },
-];
+const removePinnLayer = (i) => pinnConfig.hiddenLayers.splice(i, 1);
 
 // ---- RF ----
 const rfConfig = reactive({
@@ -691,7 +655,7 @@ const dlParams = reactive({ optimizer: 'Adam', lr: '0.0001', batchSize: 16, epoc
 const mlParams = reactive({ scoring: 'neg_mean_absolute_error', cvFolds: 5, nJobs: -1 });
 
 // ---- Computed ----
-const isDLModel = computed(() => ['dnn', 'cnn', 'lstm'].includes(selectedModel.value));
+const isDLModel = computed(() => ['dnn', 'cnn', 'pinn'].includes(selectedModel.value));
 const currentModelInfo = computed(() => modelTypes.find(m => m.id === selectedModel.value) || modelTypes[0]);
 const estimatedParams = computed(() => {
   if (selectedModel.value !== 'dnn') return 'N/A';
@@ -708,7 +672,7 @@ const saveConfig = () => {
     inputDim: activeInputDim.value,
     outputDim: activeOutputDim.value,
     rawOutputDim: activeRawOutputDim.value,
-    dnn: dnnConfig, cnn: cnnConfig, lstm: lstmConfig, svm: svmConfig, rf: rfConfig,
+    dnn: dnnConfig, cnn: cnnConfig, pinn: pinnConfig, rf: rfConfig,
     dlParams, mlParams,
   };
   localStorage.setItem('model_config', JSON.stringify(config));
@@ -720,5 +684,4 @@ const saveConfig = () => {
 .layer-list-enter-active, .layer-list-leave-active { transition: all 0.35s cubic-bezier(0.4,0,0.2,1); }
 .layer-list-enter-from, .layer-list-leave-to { opacity: 0; transform: translateX(-16px); }
 .indicator-indigo { width: 4px; flex-shrink: 0; border-radius: 2px; background: #6366f1; }
-.indicator-purple { width: 4px; flex-shrink: 0; border-radius: 2px; background: #a855f7; }
 </style>

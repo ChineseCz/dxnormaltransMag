@@ -27,7 +27,7 @@
           <div v-if="!isCollapsed" class="overflow-hidden">
             <div class="font-extrabold leading-tight tracking-tight"
               style="font-size:20px; background:linear-gradient(90deg,#93c5fd,#818cf8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; white-space:nowrap;">
-              物理场智能分析平台
+              电力设备物理场预测平台
             </div>
             <div class="text-[11px] text-slate-500 tracking-wider uppercase mt-1">Physical Field AI</div>
           </div>

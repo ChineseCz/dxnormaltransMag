@@ -9,7 +9,7 @@
           </div>
           <h1 class="text-2xl font-extrabold tracking-tight"
               style="background:linear-gradient(90deg,#22d3ee,#67e8f9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
-            数据上传与智能校验
+            数据上传
           </h1>
         </div>
         <p class="text-slate-500 text-xs mt-1.5 ml-[48px]">将仿真物理场文件上传至指定数据集</p>
