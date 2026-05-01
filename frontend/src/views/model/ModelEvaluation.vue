@@ -27,8 +27,8 @@
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <!-- 物理场分布对比 -->
-      <el-card class="bg-gray-800 border-gray-700" header="物理场预测值 vs 真实值对比 (1241 点)">
+      <!-- 电磁场分布对比 -->
+      <el-card class="bg-gray-800 border-gray-700" header="电磁场预测值 vs 真实值对比 (1241 点)">
         <div class="h-[350px]">
           <v-chart :option="fieldComparisonOption" autoresize />
         </div>
@@ -82,7 +82,7 @@ use([CanvasRenderer, LineChart, BarChart, GridComponent, TooltipComponent, Legen
 const selectedModel = ref('DNN_2023-03-13.pth');
 const models = ['DNN_2023-03-13.pth', 'DNN_2023-03-12.pth'];
 
-// 模拟物理场对比数据 (取 50 个点展示)
+// 模拟电磁场对比数据 (取 50 个点展示)
 const points = Array.from({ length: 50 }, (_, i) => i);
 const realValues = points.map(p => Math.sin(p / 5) * 5 + 10);
 const predValues = realValues.map(v => v + (Math.random() - 0.5) * 0.4);
@@ -95,8 +95,8 @@ const fieldComparisonOption = ref({
   xAxis: { type: 'category', data: points, axisLabel: { color: '#64748b' } },
   yAxis: { type: 'value', axisLabel: { color: '#64748b' }, splitLine: { lineStyle: { color: '#334155' } } },
   series: [
-    { name: '实际物理场 (Real)', type: 'line', data: realValues, smooth: true, lineStyle: { width: 3, color: '#10b981' } },
-    { name: '预测物理场 (Pred)', type: 'line', data: predValues, lineStyle: { type: 'dashed', color: '#3b82f6' } }
+    { name: '实际电磁场 (Real)', type: 'line', data: realValues, smooth: true, lineStyle: { width: 3, color: '#10b981' } },
+    { name: '预测电磁场 (Pred)', type: 'line', data: predValues, lineStyle: { type: 'dashed', color: '#3b82f6' } }
   ]
 });
 

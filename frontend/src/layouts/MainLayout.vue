@@ -27,7 +27,7 @@
           <div v-if="!isCollapsed" class="overflow-hidden">
             <div class="font-extrabold leading-tight tracking-tight"
               style="font-size:20px; background:linear-gradient(90deg,#93c5fd,#818cf8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; white-space:nowrap;">
-              电力设备物理场预测平台
+              电气设备电磁场预测平台
             </div>
             <div class="text-[11px] text-slate-500 tracking-wider uppercase mt-1">Physical Field AI</div>
           </div>
@@ -132,6 +132,15 @@
               <el-menu-item index="/predict-history">
                 <el-icon size="15"><Clock /></el-icon><span class="ml-1" style="font-size:15px;">预测记录</span>
               </el-menu-item>
+              <el-menu-item index="/gaoya-field">
+                <el-icon size="15"><Lightning /></el-icon><span class="ml-1" style="font-size:15px;">高压套管场云图</span>
+              </el-menu-item>
+              <el-menu-item index="/reactor-field">
+                <el-icon size="15"><Magnet /></el-icon><span class="ml-1" style="font-size:15px;">电抗器磁场云图</span>
+              </el-menu-item>
+              <el-menu-item index="/transformer-field">
+                <el-icon size="15"><Cpu /></el-icon><span class="ml-1" style="font-size:15px;">变压器电场云图</span>
+              </el-menu-item>
             </el-sub-menu>
 
             <!-- AI 助手 -->
@@ -150,9 +159,11 @@
               <el-menu-item index="/ai-knowledge">
                 <el-icon size="15"><Collection /></el-icon><span class="ml-1" style="font-size:15px;">知识库</span>
               </el-menu-item>
+              <!-- Agent 工作台（未完成，暂时隐藏）
               <el-menu-item index="/ai-agent">
                 <el-icon size="15"><SetUp /></el-icon><span class="ml-1" style="font-size:15px;">Agent 工作台</span>
               </el-menu-item>
+              -->
             </el-sub-menu>
           </el-menu>
         </div>
@@ -223,6 +234,7 @@ import {
   Platform, Operation, VideoPlay, TrendCharts, Box,
   Setting, Expand, Fold, HomeFilled, Switch, Clock, DataLine,
   Collection, SetUp, UserFilled, OfficeBuilding, FolderOpened, Upload,
+  Lightning, Magnet,
 } from '@element-plus/icons-vue';
 import ChatDrawer from '../components/ChatDrawer.vue';
 

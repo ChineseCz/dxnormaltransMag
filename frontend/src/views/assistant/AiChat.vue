@@ -32,27 +32,213 @@
 
     <!-- ═══════ 右栏：主对话区 ═══════ -->
     <div class="flex-1 flex flex-col min-w-0">
-      <!-- 顶栏：上下文面板 -->
-      <div class="flex-shrink-0 px-5 py-3 border-b flex items-center justify-between"
-           style="border-color:rgba(51,65,85,0.3); background:rgba(10,18,36,0.7);">
-        <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-lg flex items-center justify-center"
-               style="background:linear-gradient(135deg,#ec4899,#8b5cf6); box-shadow:0 0 12px rgba(236,72,153,0.3);">
-            <el-icon size="16" style="color:#fff;"><MagicStick /></el-icon>
+      <!-- 顶栏：标题行 + 可展开上下文面板 -->
+      <div class="flex-shrink-0 border-b" style="border-color:rgba(51,65,85,0.3); background:rgba(10,18,36,0.85);">
+
+        <!-- ── 主标题行 ── -->
+        <div class="px-5 py-3 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                 style="background:linear-gradient(135deg,#ec4899,#8b5cf6); box-shadow:0 0 12px rgba(236,72,153,0.3);">
+              <el-icon size="16" style="color:#fff;"><MagicStick /></el-icon>
+            </div>
+            <div>
+              <span class="text-white font-bold text-sm">AI 智能助手</span>
+<!--              <span class="text-slate-500 text-[10px] ml-2">电磁场分析专家 · RAG 增强</span>-->
+            </div>
           </div>
-          <div>
-            <span class="text-white font-bold text-sm">AI 智能助手</span>
-            <span class="text-slate-500 text-[10px] ml-2">物理场分析专家 · RAG 增强</span>
+
+          <div class="flex items-center gap-2">
+            <!-- 模块注入开关 —— pill 按钮 -->
+            <button v-for="(cfg, key) in ctxModules" :key="key"
+                    class="ctx-module-btn flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium select-none transition-all"
+                    :class="contextSwitches[key] ? 'ctx-module-on' : 'ctx-module-off'"
+                    @click="contextSwitches[key] = !contextSwitches[key]">
+              <span class="text-sm leading-none">{{ cfg.icon }}</span>
+              {{ cfg.label }}
+              <span class="w-1.5 h-1.5 rounded-full ml-0.5"
+                    :class="contextSwitches[key] ? 'bg-green-400' : 'bg-slate-600'"></span>
+            </button>
+
+            <!-- 分隔线 -->
+            <div class="w-px h-4 mx-1" style="background:rgba(51,65,85,0.6);"></div>
+
+            <!-- 上下文已注入 绿色徽章（点击展开面板） -->
+            <button class="ctx-badge-btn flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold select-none"
+                    :class="contextPanelVisible ? 'ctx-badge-open' : ''"
+                    @click="contextPanelVisible = !contextPanelVisible">
+              <span class="w-2 h-2 rounded-full bg-green-400 ctx-dot"></span>
+              上下文已注入
+              <span class="ctx-chevron text-[9px]" :class="contextPanelVisible ? 'ctx-chevron-open' : ''">▼</span>
+            </button>
           </div>
         </div>
-        <!-- 上下文开关 -->
-        <div class="flex items-center gap-3">
-          <div v-for="(label, key) in { dataset:'数据集', prediction:'预测', model:'模型' }" :key="key"
-               class="flex items-center gap-1 cursor-pointer" @click="contextSwitches[key] = !contextSwitches[key]">
-            <span class="w-1.5 h-1.5 rounded-full" :class="contextSwitches[key] ? 'bg-green-400' : 'bg-slate-600'"></span>
-            <span class="text-[10px]" :class="contextSwitches[key] ? 'text-slate-400' : 'text-slate-600'">{{ label }}</span>
+
+        <!-- ── 上下文展开面板 ── -->
+        <div v-if="contextPanelVisible" class="ctx-expand-panel border-t"
+             style="border-color:rgba(51,65,85,0.3); background:rgba(6,12,24,0.95);">
+
+          <!-- 面板标题栏 -->
+          <div class="px-6 pt-4 pb-2 flex items-center gap-2">
+            <span class="text-sm font-bold tracking-wider uppercase" style="color:#475569;">动态上下文注入模块</span>
+            <span class="text-xs" style="color:#334155;">· 勾选模块后其内容将作为 System Prompt 注入 LLM</span>
           </div>
+
+          <!-- 三列数据卡 -->
+          <div class="grid grid-cols-3 gap-4 px-6 pb-4">
+
+              <!-- 📊 数据集元数据 -->
+            <div class="ctx-card rounded-xl p-4 cursor-pointer"
+                 :class="!contextSwitches.dataset ? 'ctx-card-off' : 'ctx-card-on'"
+                 @click="contextSwitches.dataset = !contextSwitches.dataset">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-xl leading-none">📊</span>
+                <span class="text-sm font-bold" style="color:#60a5fa;">数据集元数据</span>
+                <div class="ml-auto flex items-center gap-1.5">
+                  <!-- toggle pill -->
+                  <div class="ctx-toggle-pill" :class="contextSwitches.dataset ? 'ctx-toggle-on' : 'ctx-toggle-off'">
+                    <span class="ctx-toggle-thumb" :class="contextSwitches.dataset ? 'ctx-toggle-thumb-on' : ''"></span>
+                  </div>
+                  <span class="text-xs" :style="contextSwitches.dataset ? 'color:#34d399' : 'color:#475569'">
+                    {{ contextSwitches.dataset ? '注入中' : '已关闭' }}
+                  </span>
+                </div>
+              </div>
+              <div class="space-y-2">
+                <div class="ctx-row">
+                  <span class="ctx-key">Dataset ID</span>
+                  <span class="ctx-val font-mono" style="color:#93c5fd; font-size:12px;">ds_reactor_sc</span>
+                </div>
+                <div class="ctx-row">
+                  <span class="ctx-key">电磁场类别</span>
+                  <span class="ctx-val" style="color:#a78bfa;">铁心电抗器漏磁场 B</span>
+                </div>
+                <div class="ctx-row">
+                  <span class="ctx-key">输入维度</span>
+                  <span class="ctx-val">1维 (激励电流 I / A)</span>
+                </div>
+                <div class="ctx-row">
+                  <span class="ctx-key">输出节点</span>
+                  <span class="ctx-val" style="color:#34d399;">91,462 nodes</span>
+                </div>
+                <div class="ctx-row">
+                  <span class="ctx-key">样本总量</span>
+                  <span class="ctx-val">51 组（中部匝间短路）</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ⚙️ 模型配置快照 -->
+            <div class="ctx-card rounded-xl p-4 cursor-pointer"
+                 :class="!contextSwitches.model ? 'ctx-card-off' : 'ctx-card-on'"
+                 @click="contextSwitches.model = !contextSwitches.model">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-xl leading-none">⚙️</span>
+                <span class="text-sm font-bold" style="color:#fbbf24;">模型配置快照</span>
+                <div class="ml-auto flex items-center gap-1.5">
+                  <div class="ctx-toggle-pill" :class="contextSwitches.model ? 'ctx-toggle-on' : 'ctx-toggle-off'">
+                    <span class="ctx-toggle-thumb" :class="contextSwitches.model ? 'ctx-toggle-thumb-on' : ''"></span>
+                  </div>
+                  <span class="text-xs" :style="contextSwitches.model ? 'color:#34d399' : 'color:#475569'">
+                    {{ contextSwitches.model ? '注入中' : '已关闭' }}
+                  </span>
+                </div>
+              </div>
+              <div class="space-y-2">
+                <div class="ctx-row">
+                  <span class="ctx-key">架构</span>
+                  <span class="ctx-val font-mono" style="font-size:12px;">DNN [128, 64, 32]</span>
+                </div>
+                <div class="ctx-row">
+                  <span class="ctx-key">PCA 主成分</span>
+                  <span class="ctx-val" style="color:#fbbf24;">6 维</span>
+                </div>
+                <div class="ctx-row">
+                  <span class="ctx-key">优化器</span>
+                  <span class="ctx-val">Adam · lr=1e-3</span>
+                </div>
+                <div class="ctx-row">
+                  <span class="ctx-key">激活函数</span>
+                  <span class="ctx-val">ReLU</span>
+                </div>
+                <div class="ctx-row">
+                  <span class="ctx-key">Batch / Epoch</span>
+                  <span class="ctx-val">32 / 500</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 📈 最近预测结果 -->
+            <div class="ctx-card rounded-xl p-4 cursor-pointer"
+                 :class="!contextSwitches.prediction ? 'ctx-card-off' : 'ctx-card-on'"
+                 @click="contextSwitches.prediction = !contextSwitches.prediction">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-xl leading-none">📈</span>
+                <span class="text-sm font-bold" style="color:#34d399;">最近预测结果</span>
+                <div class="ml-auto flex items-center gap-1.5">
+                  <div class="ctx-toggle-pill" :class="contextSwitches.prediction ? 'ctx-toggle-on' : 'ctx-toggle-off'">
+                    <span class="ctx-toggle-thumb" :class="contextSwitches.prediction ? 'ctx-toggle-thumb-on' : ''"></span>
+                  </div>
+                  <span class="text-xs" :style="contextSwitches.prediction ? 'color:#34d399' : 'color:#475569'">
+                    {{ contextSwitches.prediction ? '注入中' : '已关闭' }}
+                  </span>
+                </div>
+              </div>
+              <div class="space-y-2">
+                <div class="ctx-row">
+                  <span class="ctx-key">工况 I</span>
+                  <span class="ctx-val" style="color:#fbbf24;">280 A（稳态激励）</span>
+                </div>
+                <div class="ctx-row">
+                  <span class="ctx-key">B_max</span>
+                  <span class="ctx-val" style="color:#f87171;">0.836 T</span>
+                </div>
+                <div class="ctx-row">
+                  <span class="ctx-key">B_min</span>
+                  <span class="ctx-val">0.012 T</span>
+                </div>
+                <div class="ctx-row">
+                  <span class="ctx-key">均值 μ</span>
+                  <span class="ctx-val">0.318 T</span>
+                </div>
+                <div class="ctx-row">
+                  <span class="ctx-key">标准差 σ</span>
+                  <span class="ctx-val">0.241 T</span>
+                </div>
+                <div class="ctx-row">
+                  <span class="ctx-key">Schema 标签</span>
+                  <span class="ctx-val" style="color:#c084fc;">Phenomenon</span>
+                </div>
+                <div class="ctx-row" style="margin-top:-2px;">
+                  <span class="ctx-key"></span>
+                  <span class="text-xs" style="color:#6366f1;">↳ 中部绕组磁场畸变</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- System Prompt 注入片段预览 -->
+          <div class="mx-6 mb-4 rounded-xl overflow-hidden"
+               style="border:1px solid rgba(51,65,85,0.5); background:rgba(0,0,0,0.5);">
+            <div class="px-4 py-2 flex items-center gap-2 border-b"
+                 style="border-color:rgba(51,65,85,0.4); background:rgba(15,23,42,0.6);">
+              <span class="w-2 h-2 rounded-full bg-yellow-400" style="animation:ctxPulse 2s ease-in-out infinite;"></span>
+              <span class="text-xs font-bold tracking-wide" style="color:#94a3b8;">System Prompt 注入片段预览</span>
+              <span class="text-[11px]" style="color:#334155;">— 切换上方模块开关，文本实时变化</span>
+              <!-- 注入数量徽章 -->
+              <span class="ml-auto px-2 py-0.5 rounded-full text-xs font-bold"
+                    style="background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.25);">
+                {{ [contextSwitches.dataset, contextSwitches.model, contextSwitches.prediction].filter(Boolean).length }} / 3 模块已注入
+              </span>
+            </div>
+            <div class="px-4 py-3">
+              <p class="text-xs leading-relaxed break-all whitespace-pre-wrap"
+                 style="font-family:'JetBrains Mono',ui-monospace,monospace; color:#64748b; line-height:1.8;">{{ systemPromptText }}</p>
+            </div>
+          </div>
+
         </div>
+
       </div>
 
       <!-- 消息列表 -->
@@ -65,20 +251,28 @@
           </div>
           <h2 class="text-xl font-bold mb-2"
               style="background:linear-gradient(90deg,#f472b6,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
-            你好，我是物理场 AI 助手
+            你好，我是电磁场预测平台AI助手
           </h2>
           <p class="text-slate-500 text-sm mb-8 text-center max-w-md">
-            我可以帮你分析预测结果、解答电磁学问题、推荐模型参数，也可以直接执行平台操作。
+            我可以帮你分析预测结果、解答电气设备电磁场相关问题、推荐模型参数等。
           </p>
 
           <!-- 预设 Prompt 快捷卡片 -->
           <div class="grid grid-cols-2 gap-3 w-full max-w-lg">
             <div v-for="(p, idx) in presetPrompts" :key="idx"
                  class="prompt-card p-3 rounded-xl cursor-pointer group"
-                 @click="handlePreset(p.content)">
+                 @click="handlePreset(p.content, p.routeKey)">
               <div class="flex items-center gap-2 mb-1.5">
                 <span class="text-base">{{ p.icon }}</span>
                 <span class="text-xs font-bold" :style="`color:${p.color}`">{{ p.title }}</span>
+              </div>
+              <!-- 轨道标记小标签 -->
+              <div class="flex gap-1 mb-1">
+                <span v-for="badge in p.badges" :key="badge.label"
+                      class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold"
+                      :style="`background:${badge.bg}; color:${badge.color}; border:1px solid ${badge.border};`">
+                  {{ badge.icon }} {{ badge.label }}
+                </span>
               </div>
               <p class="text-[11px] text-slate-500 leading-relaxed group-hover:text-slate-400 transition-colors">{{ p.desc }}</p>
             </div>
@@ -116,8 +310,82 @@
               <!-- 正常内容 -->
               <div v-else class="px-4 py-3 rounded-2xl rounded-bl-md ai-msg-bubble"
                    :class="msg.error ? 'ai-msg-error' : ''">
+                <!-- ── 路由徽章栏 ── -->
+                <div v-if="msg.route && msg.route.badges && msg.route.badges.length"
+                     class="flex flex-wrap gap-1.5 mb-2.5">
+                  <span v-for="badge in msg.route.badges" :key="badge.label"
+                        class="route-badge inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                        :style="`background:${badge.bg}; color:${badge.color}; border:1px solid ${badge.border};`">
+                    {{ badge.icon }} {{ badge.label }}
+                  </span>
+                </div>
                 <div class="ai-markdown text-sm leading-relaxed" v-html="renderMarkdown(msg.content)"></div>
               </div>
+
+              <!-- ── 展开检索来源 折叠面板 ── -->
+              <div v-if="!msg.loading && msg.sources && (msg.sources.kg?.length || msg.sources.vector?.length)"
+                   class="mt-1.5">
+                <button class="flex items-center gap-1 text-[10px] text-slate-500 hover:text-slate-300 transition-colors"
+                        @click="toggleSources(msg.id)">
+                  <span class="source-arrow" :class="expandedSources.has(msg.id) ? 'expanded' : ''">▶</span>
+                  展开检索来源
+                  <span v-if="msg.sources.kg?.length" class="ml-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px]"
+                        style="background:rgba(139,92,246,0.15);color:#a78bfa;border:1px solid rgba(139,92,246,0.25);">
+                    🕸️ KG {{ msg.sources.kg.length }}条
+                  </span>
+                  <span v-if="msg.sources.vector?.length" class="ml-0.5 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px]"
+                        style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.25);">
+                    📄 向量 {{ msg.sources.vector.length }}段
+                  </span>
+                </button>
+
+                <!-- 展开内容 -->
+                <div v-if="expandedSources.has(msg.id)" class="sources-panel mt-1.5 rounded-xl overflow-hidden"
+                     style="border:1px solid rgba(51,65,85,0.4);">
+                  <!-- KG 来源 -->
+                  <div v-if="msg.sources.kg?.length" class="p-3"
+                       style="background:rgba(88,28,135,0.08); border-bottom:1px solid rgba(139,92,246,0.15);">
+                    <div class="flex items-center gap-1.5 mb-2">
+                      <span class="text-[10px] font-bold" style="color:#a78bfa;">🕸️ 知识图谱轨道 · 因果链三元组</span>
+                    </div>
+                    <div v-for="(triple, ti) in msg.sources.kg" :key="ti"
+                         class="kg-triple flex items-center gap-1 text-[11px] mb-1 last:mb-0">
+                      <template v-for="(node, ni) in triple.chain" :key="ni">
+                        <span class="kg-node px-1.5 py-0.5 rounded"
+                              :style="ni === 0 ? 'background:rgba(139,92,246,0.2);color:#c084fc;border:1px solid rgba(139,92,246,0.3);'
+                                    : ni === triple.chain.length-1 ? 'background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.25);'
+                                    : 'background:rgba(251,191,36,0.1);color:#fbbf24;border:1px solid rgba(251,191,36,0.2);'">
+                          {{ node }}
+                        </span>
+                        <span v-if="ni < triple.chain.length-1" class="text-slate-600">→</span>
+                      </template>
+                      <span v-if="triple.confidence" class="ml-auto text-[9px]" style="color:#64748b;">
+                        置信度 {{ triple.confidence }}
+                      </span>
+                    </div>
+                  </div>
+                  <!-- 向量来源 -->
+                  <div v-if="msg.sources.vector?.length" class="p-3"
+                       style="background:rgba(30,58,138,0.08);">
+                    <div class="flex items-center gap-1.5 mb-2">
+                      <span class="text-[10px] font-bold" style="color:#60a5fa;">📄 FAISS 向量轨道 · 召回文档</span>
+                    </div>
+                    <div v-for="(doc, di) in msg.sources.vector" :key="di"
+                         class="vector-doc mb-2 last:mb-0 p-2 rounded-lg"
+                         style="background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.12);">
+                      <div class="flex items-center justify-between mb-1">
+                        <span class="text-[10px] font-semibold" style="color:#93c5fd;">{{ doc.title }}</span>
+                        <div class="flex items-center gap-1">
+                          <div class="similarity-bar" :style="`width:${Math.round(doc.similarity*50)}px`"></div>
+                          <span class="text-[9px]" style="color:#64748b;">余弦相似度 {{ (doc.similarity*100).toFixed(1) }}%</span>
+                        </div>
+                      </div>
+                      <p class="text-[10px] leading-relaxed" style="color:#94a3b8;">{{ doc.excerpt }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div class="text-[10px] text-slate-600 mt-1">{{ msg.timestamp }}</div>
             </div>
           </div>
@@ -129,14 +397,14 @@
 
       <!-- 输入区 -->
       <div class="flex-shrink-0 px-5 pb-4 pt-2">
-        <!-- 快捷 Prompt 条（对话中也可使用） -->
-        <div v-if="messages.length > 0" class="flex gap-2 mb-2 overflow-x-auto pb-1">
+        <!-- 快捷 Prompt 条（已隐藏）-->
+        <!-- <div v-if="messages.length > 0" class="flex gap-2 mb-2 overflow-x-auto pb-1">
           <span v-for="(q, i) in quickActions" :key="i"
                 class="quick-chip flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] cursor-pointer"
                 @click="handlePreset(q.content)">
             {{ q.icon }} {{ q.label }}
           </span>
-        </div>
+        </div> -->
 
         <div class="flex items-end gap-3">
           <div class="flex-1 relative">
@@ -160,7 +428,7 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick, onMounted } from 'vue';
+import { ref, computed, watch, nextTick, onMounted } from 'vue';
 import {
   Plus, Close, ChatDotRound, MagicStick, Promotion,
 } from '@element-plus/icons-vue';
@@ -176,24 +444,101 @@ const inputText = ref('');
 const messageListRef = ref(null);
 const scrollAnchorRef = ref(null);
 
-// 预设 Prompt 快捷卡片
+// 展开检索来源的消息 id 集合
+const expandedSources = ref(new Set());
+function toggleSources(msgId) {
+  const s = new Set(expandedSources.value);
+  s.has(msgId) ? s.delete(msgId) : s.add(msgId);
+  expandedSources.value = s;
+}
+
+// ── 上下文面板 ──
+const contextPanelVisible = ref(false);
+
+// 模块配置（用于标题栏 pill 按钮）
+const ctxModules = {
+  dataset:    { icon: '📊', label: '数据集' },
+  model:      { icon: '⚙️', label: '模型'   },
+  prediction: { icon: '📈', label: '预测'   },
+};
+
+// System Prompt 注入预览（随开关动态变化）
+const systemPromptText = computed(() => {
+  const sw = contextSwitches.value;
+  const parts = [];
+  if (sw.dataset) {
+    parts.push('[数据集: ds_reactor_sc · 铁心电抗器漏磁场 B · 输入1维(I/A) · 输出91462节点 · 51组样本(中部匝间短路)]');
+  }
+  if (sw.model) {
+    parts.push('[模型: DNN[128,64,32] · PCA=6维 · Adam lr=1e-3 · ReLU · Batch=32 · Epoch=500]');
+  }
+  if (sw.prediction) {
+    parts.push('[最近预测: I=280A · B_max=0.836T · B_min=0.012T · μ=0.318T · σ=0.241T · Schema=Phenomenon(中部绕组磁场畸变)]');
+  }
+  if (parts.length === 0) {
+    return '# 所有上下文模块已关闭 — 当前为纯文本对话模式，无平台上下文注入';
+  }
+  return '平台上下文: ' + parts.join(' ');
+});
+
+// 预设 Prompt 快捷卡片（双轨路由演示）
 const presetPrompts = [
-  { icon: '🔍', title: '分析预测结果', desc: '帮我解读最近一次物理场预测的分布特征和异常点', color: '#60a5fa', content: '请分析我最近一次的物理场预测结果，包括分布特征、异常区域和可能的物理含义。' },
-  { icon: '⚡', title: '解释磁场分布', desc: '从物理角度解释变压器漏磁场的分布规律', color: '#fbbf24', content: '请从电磁学原理出发，解释变压器漏磁场的空间分布规律，以及影响磁场分布的主要因素。' },
-  { icon: '🛠️', title: '推荐模型参数', desc: '根据数据集特征推荐合适的模型架构和超参数', color: '#34d399', content: '请根据我当前数据集的特征（输入维度、输出维度、样本数），推荐合适的神经网络架构和超参数设置。' },
-  { icon: '📖', title: 'PCA 降维原理', desc: '解释 PCA 主成分分析在物理场预测中的作用', color: '#c084fc', content: '请解释 PCA 主成分分析的数学原理，以及它在电力设备物理场预测中为什么能有效降低输出维度。' },
+  {
+    icon: '🔍', title: '故障溯源', color: '#a78bfa',
+    routeKey: 'fault_trace',
+    badges: [
+      { icon: '🕸️', label: 'KG 图谱', bg: 'rgba(139,92,246,0.15)', color: '#a78bfa', border: 'rgba(139,92,246,0.3)' },
+    ],
+    desc: 'Reactor→Winding→Fault_Cause 三跳因果路径检索',
+    content: '电抗器在 280 A 工况下中部绕组区域磁通密度 B 值较正常工况偏低约 12%，请帮我进行匝间短路故障溯源分析。',
+  },
+  {
+    icon: '⚡', title: '调参排错', color: '#fbbf24',
+    routeKey: 'tune_debug',
+    badges: [
+      { icon: '🕸️', label: 'KG 图谱', bg: 'rgba(139,92,246,0.15)', color: '#a78bfa', border: 'rgba(139,92,246,0.3)' },
+    ],
+    desc: 'Problem→Algorithm_Param→Solution 算法维度路径',
+    content: '电抗器 DNN 模型在低电流区间（100~300 A）的 MAPE 偏高，请通过知识图谱帮我排查参数配置问题并给出优化建议。',
+  },
+  {
+    icon: '📖', title: '规程查询', color: '#60a5fa',
+    routeKey: 'regulation_query',
+    badges: [
+      { icon: '📄', label: 'FAISS 向量', bg: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: 'rgba(59,130,246,0.3)' },
+    ],
+    desc: '相似度 93.6% · 向量知识库召回匝间短路诊断规程',
+    content: '请查询铁心电抗器匝间短路的标准诊断规程与绕组绝缘检测方法。',
+  },
+  {
+    icon: '🔄', title: '综合诊断（双轨并发）', color: '#34d399',
+    routeKey: 'dual_track',
+    badges: [
+      { icon: '🕸️', label: 'KG', bg: 'rgba(139,92,246,0.15)', color: '#a78bfa', border: 'rgba(139,92,246,0.3)' },
+      { icon: '📄', label: '向量', bg: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: 'rgba(59,130,246,0.3)' },
+      { icon: '⚡', label: '并发', bg: 'rgba(251,191,36,0.12)', color: '#fbbf24', border: 'rgba(251,191,36,0.25)' },
+    ],
+    desc: '异步并发双轨检索 + 结果融合输出',
+    content: '请对当前电抗器设备进行综合智能诊断，结合 DNN 磁场预测结果与知识库，同时调用知识图谱和向量知识库双轨检索。',
+  },
 ];
 
 const quickActions = [
   { icon: '📊', label: '分析损失曲线', content: '当前模型的训练损失曲线是否正常？有没有过拟合或欠拟合的迹象？' },
   { icon: '🔧', label: '调参建议', content: '训练效果不太好，请给我一些超参数调优的建议。' },
-  { icon: '📈', label: '对比模型', content: '帮我对比 DNN 和 CNN 在当前物理场预测任务中的优劣。' },
+  { icon: '📈', label: '对比模型', content: '帮我对比 DNN 和 CNN 在当前电磁场预测任务中的优劣。' },
   { icon: '❓', label: '平台使用', content: '请介绍一下这个平台的主要功能模块和使用流程。' },
 ];
 
-function handlePreset(content) {
+function handlePreset(content, routeKey) {
   inputText.value = content;
-  handleSend();
+  sendMessageWithRoute(content, routeKey);
+}
+
+function sendMessageWithRoute(text, routeKey) {
+  if (!text.trim() || isStreaming.value) return;
+  inputText.value = '';
+  sendMessage(text, null, null, routeKey);
 }
 
 function handleSend() {
@@ -234,6 +579,98 @@ onMounted(() => {
 /* 会话列表 */
 .conv-item:hover { background: rgba(236,72,153,0.05); }
 .conv-active { background: rgba(236,72,153,0.1) !important; border-left: 2px solid #ec4899; }
+
+/* ── 模块切换 pill 按钮（标题栏） ── */
+.ctx-module-btn { cursor: pointer; }
+.ctx-module-on {
+  background: rgba(16,185,129,0.12);
+  color: #a7f3d0;
+  border: 1px solid rgba(16,185,129,0.3);
+}
+.ctx-module-on:hover { background: rgba(16,185,129,0.2); }
+.ctx-module-off {
+  background: rgba(30,41,59,0.6);
+  color: #475569;
+  border: 1px solid rgba(51,65,85,0.3);
+}
+.ctx-module-off:hover { color: #64748b; border-color: rgba(71,85,105,0.5); }
+
+/* ── 上下文已注入徽章 ── */
+.ctx-badge-btn {
+  background: rgba(16,185,129,0.12);
+  color: #34d399;
+  border: 1px solid rgba(16,185,129,0.3);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.ctx-badge-btn:hover { background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.45); }
+.ctx-badge-open {
+  background: rgba(16,185,129,0.22) !important;
+  border-color: rgba(16,185,129,0.5) !important;
+  box-shadow: 0 0 10px rgba(16,185,129,0.15);
+}
+.ctx-dot { animation: ctxPulse 2s ease-in-out infinite; }
+@keyframes ctxPulse {
+  0%,100% { opacity:1; box-shadow:0 0 0 0 rgba(52,211,153,0.4); }
+  50%      { opacity:0.7; box-shadow:0 0 0 4px rgba(52,211,153,0); }
+}
+.ctx-chevron { display:inline-block; font-size:8px; transition:transform 0.25s ease; }
+.ctx-chevron-open { transform: rotate(180deg); }
+
+/* ── 展开面板 ── */
+.ctx-expand-panel { animation: ctxSlideDown 0.22s ease; }
+@keyframes ctxSlideDown {
+  from { opacity:0; transform:translateY(-6px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* ── 数据卡 ── */
+.ctx-card {
+  background: rgba(15,23,42,0.6);
+  border: 1px solid rgba(51,65,85,0.4);
+  transition: all 0.2s ease;
+}
+.ctx-card-on  { border-color: rgba(71,85,105,0.5); }
+.ctx-card-off { opacity: 0.35; filter: grayscale(0.5); pointer-events: none; }
+.ctx-card:not(.ctx-card-off):hover { border-color: rgba(100,116,139,0.6); background: rgba(15,23,42,0.75); }
+
+/* ── Toggle pill（卡片内） ── */
+.ctx-toggle-pill {
+  width: 28px; height: 15px;
+  border-radius: 999px;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.ctx-toggle-on  { background: rgba(16,185,129,0.4); border:1px solid rgba(16,185,129,0.5); }
+.ctx-toggle-off { background: rgba(51,65,85,0.5);   border:1px solid rgba(71,85,105,0.3); }
+.ctx-toggle-thumb {
+  position: absolute; top: 2px; left: 2px;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: #475569;
+  transition: all 0.2s ease;
+}
+.ctx-toggle-thumb-on { left: 15px; background: #34d399; }
+
+/* ── 卡片行 ── */
+.ctx-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+}
+.ctx-key {
+  font-size: 12px;
+  color: #475569;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.ctx-val {
+  font-size: 12px;
+  color: #94a3b8;
+  text-align: right;
+}
 
 /* Prompt 卡片 */
 .prompt-card {
@@ -306,6 +743,41 @@ onMounted(() => {
   border-color: rgba(236,72,153,0.3);
   color: #f472b6;
   background: rgba(236,72,153,0.06);
+}
+
+/* 路由徽章 */
+.route-badge {
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(4px);
+}
+
+/* 展开检索来源 */
+.source-arrow {
+  display: inline-block;
+  transition: transform 0.2s ease;
+  font-size: 8px;
+}
+.source-arrow.expanded { transform: rotate(90deg); }
+
+.sources-panel {
+  background: rgba(8,14,29,0.8);
+  animation: slideDown 0.2s ease;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* KG 节点 */
+.kg-triple { flex-wrap: wrap; }
+.kg-node { font-size: 10px; font-weight: 600; }
+
+/* 相似度进度条 */
+.similarity-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  min-width: 8px;
 }
 
 /* 输入框暗色 */

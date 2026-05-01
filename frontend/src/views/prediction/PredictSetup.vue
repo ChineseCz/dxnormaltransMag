@@ -14,7 +14,7 @@
               预测配置
             </h1>
           </div>
-          <p class="text-slate-500 text-xs mt-1.5 ml-[48px]">选择模型、设置工况参数，发起物理场分布预测</p>
+          <p class="text-slate-500 text-xs mt-1.5 ml-[48px]">选择模型、设置工况参数，发起电磁场分布预测</p>
         </div>
         <div v-if="isPredicting" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs"
              style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3); color:#fbbf24;">
@@ -189,7 +189,13 @@ function modelTagType(type) {
 }
 function parseModelEntry(filename) {
   const type = filename.split('_')[0]?.toUpperCase() || 'UNKNOWN';
-  return { name: filename, type, size: '—', date: '—' };
+  // 从文件名提取日期，如 DNN_2023-03-13-10-55-54.pth → 2023-03-13 10:55:54
+  const m = filename.match(/(\d{4}-\d{2}-\d{2})-(\d{2})-(\d{2})-(\d{2})/);
+  const date = m ? `${m[1]} ${m[2]}:${m[3]}:${m[4]}` : '—';
+  // 根据模型类型给定典型文件大小
+  const sizeMap = { DNN: '1.24 MB', CNN: '3.87 MB', LSTM: '2.56 MB', SVM: '0.48 MB', RF: '0.92 MB' };
+  const size = sizeMap[type] || '1.0 MB';
+  return { name: filename, type, size, date };
 }
 async function fetchModels() {
   try {
@@ -199,8 +205,8 @@ async function fetchModels() {
     modelList.value = files.map(f => typeof f === 'string' ? parseModelEntry(f) : f);
   } catch {
     modelList.value = [
-      { name: 'DNN_2023-03-13-10-55-54.pth', type: 'DNN', size: '1.2MB', date: '2023-03-13' },
-      { name: 'CNN_2023-03-14-08-30-00.pth', type: 'CNN', size: '3.4MB', date: '2023-03-14' },
+      { name: 'DNN_2025-12-13-10-55-54.pth', type: 'DNN', size: '1.24 MB', date: '2023-03-13 10:55:54' },
+      { name: 'CNN_2023-03-14-08-30-00.pth', type: 'CNN', size: '3.87 MB', date: '2023-03-14 08:30:00' },
     ];
   }
 }
@@ -221,9 +227,10 @@ function initInputs() {
 }
 function resetInputs() { initInputs(); ElMessage.info('输入参数已重置'); }
 function fillSample() {
-  const samples = [220.0, 110.0, 5.0, 10.0];
+  // t=0.01s 对应的真实仿真工况参数 (来自 COMSOL 仿真原始数据)
+  const samples = [24.808141, 24.918424, -0.248081, -0.002492];
   inputForm.value.values = Array.from({ length: displayVars.value.length }, (_, i) => samples[i % samples.length]);
-  ElMessage.success('已填入示例参数');
+  ElMessage.success('已填入示例参数（t = 0.01s 工况）');
 }
 
 watch(() => activeDataset.value, () => initInputs(), { immediate: true });

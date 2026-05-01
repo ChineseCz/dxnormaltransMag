@@ -13,7 +13,7 @@
             多次对比
           </h1>
         </div>
-        <p class="text-slate-500 text-xs mt-1.5 ml-[48px]">选取两条预测记录，对比物理场分布差异与误差指标</p>
+        <p class="text-slate-500 text-xs mt-1.5 ml-[48px]">选取两条预测记录，对比电磁场分布差异与误差指标</p>
       </div>
     </div>
 
@@ -108,7 +108,7 @@
           <div class="card-header">
             <div class="flex items-center gap-2">
               <el-icon size="14" style="color:#60a5fa;"><TrendCharts /></el-icon>
-              <span class="text-white font-bold text-sm">物理场分布叠加对比</span>
+              <span class="text-white font-bold text-sm">电磁场分布叠加对比</span>
             </div>
           </div>
           <div class="h-[380px] p-4">

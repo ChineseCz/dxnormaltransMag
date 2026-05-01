@@ -68,6 +68,7 @@ export function usePredictionStore() {
           modelFile,
           modelType,
           inputs: { ...inputs },
+          inputArray: inputArray ? [...inputArray] : [],
           fieldValues: data.fieldValues || data.predicted_point || [],
           coordinates: data.coordinates || [],
           stats: data.stats || null,
@@ -77,7 +78,7 @@ export function usePredictionStore() {
         predictionHistory.value.unshift(result);
         _saveHistory();
 
-        ElMessage.success('预测完成！已生成物理场分布结果');
+        ElMessage.success('预测完成！已生成电磁场分布结果');
         router.push('/predict-result');
       } else {
         ElMessage.error(data.error || data.msg || '预测失败');
