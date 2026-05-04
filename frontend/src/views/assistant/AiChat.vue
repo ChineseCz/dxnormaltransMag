@@ -60,6 +60,17 @@
                     :class="contextSwitches[key] ? 'bg-green-400' : 'bg-slate-600'"></span>
             </button>
 
+            <!-- RAG 知识库增强开关 -->
+            <div class="w-px h-4 mx-1" style="background:rgba(51,65,85,0.6);"></div>
+            <button class="ctx-module-btn flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium select-none transition-all"
+                    :class="ragEnabled ? 'ctx-module-on' : 'ctx-module-off'"
+                    @click="ragEnabled = !ragEnabled">
+              <span class="text-sm leading-none">📚</span>
+              RAG 知识增强
+              <span class="w-1.5 h-1.5 rounded-full ml-0.5"
+                    :class="ragEnabled ? 'bg-purple-400' : 'bg-slate-600'"></span>
+            </button>
+
             <!-- 分隔线 -->
             <div class="w-px h-4 mx-1" style="background:rgba(51,65,85,0.6);"></div>
 
@@ -107,23 +118,29 @@
               <div class="space-y-2">
                 <div class="ctx-row">
                   <span class="ctx-key">Dataset ID</span>
-                  <span class="ctx-val font-mono" style="color:#93c5fd; font-size:12px;">ds_reactor_sc</span>
+                  <span class="ctx-val font-mono" style="color:#93c5fd; font-size:12px;">
+                    {{ contextData.dataset?.id || localStorage?.getItem?.('selected_dataset_id') || '未选择' }}
+                  </span>
                 </div>
                 <div class="ctx-row">
-                  <span class="ctx-key">电磁场类别</span>
-                  <span class="ctx-val" style="color:#a78bfa;">铁心电抗器漏磁场 B</span>
+                  <span class="ctx-key">数据集名称</span>
+                  <span class="ctx-val" style="color:#a78bfa;">{{ contextData.dataset?.name || '-' }}</span>
                 </div>
                 <div class="ctx-row">
-                  <span class="ctx-key">输入维度</span>
-                  <span class="ctx-val">1维 (激励电流 I / A)</span>
+                  <span class="ctx-key">设备类型</span>
+                  <span class="ctx-val">{{ contextData.dataset?.deviceType || '-' }}</span>
+                </div>
+                <div class="ctx-row">
+                  <span class="ctx-key">场类型</span>
+                  <span class="ctx-val">{{ contextData.dataset?.fieldType || '-' }}</span>
                 </div>
                 <div class="ctx-row">
                   <span class="ctx-key">输出节点</span>
-                  <span class="ctx-val" style="color:#34d399;">91,462 nodes</span>
+                  <span class="ctx-val" style="color:#34d399;">{{ contextData.dataset?.outputNodes || '-' }}</span>
                 </div>
                 <div class="ctx-row">
                   <span class="ctx-key">样本总量</span>
-                  <span class="ctx-val">51 组（中部匝间短路）</span>
+                  <span class="ctx-val">{{ contextData.dataset?.samples || '-' }} 组</span>
                 </div>
               </div>
             </div>
@@ -147,23 +164,25 @@
               <div class="space-y-2">
                 <div class="ctx-row">
                   <span class="ctx-key">架构</span>
-                  <span class="ctx-val font-mono" style="font-size:12px;">DNN [128, 64, 32]</span>
+                  <span class="ctx-val font-mono" style="font-size:12px;">
+                    {{ contextData.model ? `${contextData.model.modelType}${contextData.model.architecture || ''}` : '-' }}
+                  </span>
                 </div>
                 <div class="ctx-row">
                   <span class="ctx-key">PCA 主成分</span>
-                  <span class="ctx-val" style="color:#fbbf24;">6 维</span>
+                  <span class="ctx-val" style="color:#fbbf24;">{{ contextData.model?.pcaDims || '-' }} 维</span>
                 </div>
-                <div class="ctx-row">
+                <div v-if="contextData.model?.modelType !== 'RF'" class="ctx-row">
                   <span class="ctx-key">优化器</span>
-                  <span class="ctx-val">Adam · lr=1e-3</span>
-                </div>
-                <div class="ctx-row">
-                  <span class="ctx-key">激活函数</span>
-                  <span class="ctx-val">ReLU</span>
+                  <span class="ctx-val">{{ contextData.model ? `${contextData.model.optimizer} · lr=${contextData.model.lr}` : '-' }}</span>
                 </div>
                 <div class="ctx-row">
                   <span class="ctx-key">Batch / Epoch</span>
-                  <span class="ctx-val">32 / 500</span>
+                  <span class="ctx-val">{{ contextData.model ? `${contextData.model.batch} / ${contextData.model.epoch}` : '-' }}</span>
+                </div>
+                <div v-if="contextData.model?.mae != null" class="ctx-row">
+                  <span class="ctx-key">MAE</span>
+                  <span class="ctx-val" style="color:#34d399;">{{ Number(contextData.model.mae).toExponential(2) }}</span>
                 </div>
               </div>
             </div>
@@ -185,34 +204,58 @@
                 </div>
               </div>
               <div class="space-y-2">
-                <div class="ctx-row">
-                  <span class="ctx-key">工况 I</span>
-                  <span class="ctx-val" style="color:#fbbf24;">280 A（稳态激励）</span>
-                </div>
-                <div class="ctx-row">
-                  <span class="ctx-key">B_max</span>
-                  <span class="ctx-val" style="color:#f87171;">0.836 T</span>
-                </div>
-                <div class="ctx-row">
-                  <span class="ctx-key">B_min</span>
-                  <span class="ctx-val">0.012 T</span>
-                </div>
-                <div class="ctx-row">
-                  <span class="ctx-key">均值 μ</span>
-                  <span class="ctx-val">0.318 T</span>
-                </div>
-                <div class="ctx-row">
-                  <span class="ctx-key">标准差 σ</span>
-                  <span class="ctx-val">0.241 T</span>
-                </div>
-                <div class="ctx-row">
-                  <span class="ctx-key">Schema 标签</span>
-                  <span class="ctx-val" style="color:#c084fc;">Phenomenon</span>
-                </div>
-                <div class="ctx-row" style="margin-top:-2px;">
-                  <span class="ctx-key"></span>
-                  <span class="text-xs" style="color:#6366f1;">↳ 中部绕组磁场畸变</span>
-                </div>
+                <!-- 当前模型有预测记录 -->
+                <template v-if="contextData.prediction && contextData.prediction.isCurrentModel">
+                  <div class="ctx-row">
+                    <span class="ctx-key">模型类型</span>
+                    <span class="ctx-val" style="color:#fbbf24;">{{ contextData.prediction.modelType || '-' }}</span>
+                  </div>
+                  <div class="ctx-row">
+                    <span class="ctx-key">激励电流</span>
+                    <span class="ctx-val" style="color:#fbbf24;">{{ contextData.prediction.current != null ? contextData.prediction.current + ' A' : '-' }}</span>
+                  </div>
+                  <div class="ctx-row">
+                    <span class="ctx-key">B_max</span>
+                    <span class="ctx-val" style="color:#f87171;">{{ contextData.prediction.bMax != null ? contextData.prediction.bMax + ' T' : '-' }}</span>
+                  </div>
+                  <div class="ctx-row">
+                    <span class="ctx-key">B_min</span>
+                    <span class="ctx-val">{{ contextData.prediction.bMin != null ? contextData.prediction.bMin + ' T' : '-' }}</span>
+                  </div>
+                  <div class="ctx-row">
+                    <span class="ctx-key">均值 μ</span>
+                    <span class="ctx-val">{{ contextData.prediction.bMean != null ? contextData.prediction.bMean + ' T' : '-' }}</span>
+                  </div>
+                  <div class="ctx-row">
+                    <span class="ctx-key">标准差 σ</span>
+                    <span class="ctx-val">{{ contextData.prediction.bStd != null ? contextData.prediction.bStd + ' T' : '-' }}</span>
+                  </div>
+                  <div v-if="contextData.prediction.timestamp" class="ctx-row">
+                    <span class="ctx-key">时间</span>
+                    <span class="ctx-val" style="font-size:11px; color:#475569;">{{ contextData.prediction.timestamp }}</span>
+                  </div>
+                </template>
+
+                <!-- 当前模型无预测记录 -->
+                <template v-else>
+                  <div class="flex flex-col items-center justify-center py-6 px-4 text-center">
+                    <div class="text-4xl mb-3">🔮</div>
+                    <div class="text-sm font-medium mb-2" style="color:#94a3b8;">
+                      当前激活的 {{ contextData.model?.modelType || '模型' }} 暂无预测记录
+                    </div>
+                    <div class="text-xs mb-3" style="color:#64748b;">
+                      请前往"实时预测"模块执行预测操作
+                    </div>
+                    <button
+                      @click.stop="$router.push('/predict/setup')"
+                      class="px-4 py-2 rounded-lg text-xs font-medium transition-all"
+                      style="background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.3);"
+                      @mouseenter="$event.target.style.background='rgba(16,185,129,0.25)'"
+                      @mouseleave="$event.target.style.background='rgba(16,185,129,0.15)'">
+                      前往预测模块 →
+                    </button>
+                  </div>
+                </template>
               </div>
             </div>
           </div>
@@ -228,7 +271,7 @@
               <!-- 注入数量徽章 -->
               <span class="ml-auto px-2 py-0.5 rounded-full text-xs font-bold"
                     style="background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.25);">
-                {{ [contextSwitches.dataset, contextSwitches.model, contextSwitches.prediction].filter(Boolean).length }} / 3 模块已注入
+                {{ [contextSwitches.dataset, contextSwitches.model, contextSwitches.prediction, ragEnabled].filter(Boolean).length }} / 4 模块已注入
               </span>
             </div>
             <div class="px-4 py-3">
@@ -437,7 +480,10 @@ import { useAiStore } from '../../composables/useAiStore.js';
 const {
   conversations, activeConvId, messages, isStreaming,
   newConversation, switchConversation, deleteConversation,
+  syncConversations, loadMessages,
   sendMessage, renderMarkdown, contextSwitches,
+  contextData, loadContextData,
+  ragEnabled,
 } = useAiStore();
 
 const inputText = ref('');
@@ -465,16 +511,32 @@ const ctxModules = {
 // System Prompt 注入预览（随开关动态变化）
 const systemPromptText = computed(() => {
   const sw = contextSwitches.value;
+  const cd = contextData.value;
   const parts = [];
+
   if (sw.dataset) {
-    parts.push('[数据集: ds_reactor_sc · 铁心电抗器漏磁场 B · 输入1维(I/A) · 输出91462节点 · 51组样本(中部匝间短路)]');
+    if (cd.dataset) {
+      const ds = cd.dataset;
+      parts.push(`[数据集: ${ds.id} · ${ds.name} · 设备=${ds.deviceType} · 场=${ds.fieldType} · 输出${ds.outputNodes}节点 · ${ds.samples}组样本]`);
+    } else {
+      const dsId = localStorage.getItem?.('selected_dataset_id');
+      if (dsId) parts.push(`[数据集ID: ${dsId}]`);
+    }
   }
   if (sw.model) {
-    parts.push('[模型: DNN[128,64,32] · PCA=6维 · Adam lr=1e-3 · ReLU · Batch=32 · Epoch=500]');
+    if (cd.model) {
+      const m = cd.model;
+      const arch = m.hiddenLayers?.length ? `[${m.hiddenLayers.join(',')}]` : m.modelType;
+      parts.push(`[模型: ${m.modelType}${arch} · PCA=${m.pcaDims}维 · ${m.optimizer} lr=${m.lr} · Batch=${m.batch} · Epoch=${m.epoch}]`);
+    }
   }
   if (sw.prediction) {
-    parts.push('[最近预测: I=280A · B_max=0.836T · B_min=0.012T · μ=0.318T · σ=0.241T · Schema=Phenomenon(中部绕组磁场畸变)]');
+    if (cd.prediction) {
+      const p = cd.prediction;
+      parts.push(`[最近预测: I=${p.current}A · B_max=${p.bMax}T · B_min=${p.bMin}T · μ=${p.bMean}T · σ=${p.bStd}T]`);
+    }
   }
+
   if (parts.length === 0) {
     return '# 所有上下文模块已关闭 — 当前为纯文本对话模式，无平台上下文注入';
   }
@@ -567,9 +629,20 @@ watch(
 );
 
 // 如果没有会话则自动创建
-onMounted(() => {
-  if (conversations.value.length === 0) newConversation();
-  else if (!activeConvId.value) switchConversation(conversations.value[0].id);
+onMounted(async () => {
+  // 先从后端同步会话列表
+  await syncConversations();
+
+  if (conversations.value.length === 0) {
+    newConversation();
+  } else if (!activeConvId.value) {
+    await switchConversation(conversations.value[0].id);
+  } else if (messages.value.length === 0) {
+    // 当前会话消息为空时，从后端拉取
+    await loadMessages(activeConvId.value);
+  }
+
+  await loadContextData();
 });
 </script>
 

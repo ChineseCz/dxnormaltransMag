@@ -150,9 +150,16 @@ def list_storage_templates():
 
 
 @router.get('/storage/files')
-def list_storage_files(template: Optional[str] = None):
+def list_storage_files(template: Optional[str] = None, folder: Optional[str] = None):
+    """获取指定模板和文件夹下的文件列表（只返回当前文件夹的文件，不递归）"""
     base = "template_storage/"
     prefix = f"{base}{template}/" if template else base
+
+    # 如果指定了文件夹，添加到前缀
+    if folder and folder != '/':
+        folder_path = folder.strip('/')
+        prefix = f"{prefix}{folder_path}/"
+
     try:
         all_files = storage.list_files(prefix)
     except Exception:
@@ -162,12 +169,23 @@ def list_storage_files(template: Optional[str] = None):
     for p in sorted(all_files):
         if p.endswith('/'):
             continue
-        rel = p[len(base):] if p.startswith(base) else p
-        parts = rel.split('/')
+
+        # 只返回当前文件夹的文件，不包含子文件夹的文件
+        rel = p[len(prefix):] if p.startswith(prefix) else p
+
+        # 如果路径中还包含 '/'，说明是子文件夹中的文件，跳过
+        if '/' in rel:
+            continue
+
+        filename = rel
+
+        # 获取完整的相对路径（从base开始）
+        full_rel = p[len(base):] if p.startswith(base) else p
+        parts = full_rel.split('/')
         if len(parts) < 2:
             continue
         template_key = parts[0]
-        filename = parts[-1]
+
         meta = storage.get_metadata(p)
         items.append({
             "template": template_key,
@@ -868,6 +886,118 @@ def delete_file(ds_id: str, filename: str):
     finally:
         conn.close()
     return {"message": f"{filename} 已删除"}
+
+
+@router.post('/{ds_id}/import-storage')
+async def import_from_storage(ds_id: str, request: Request):
+    """从数据存储导入文件到数据集"""
+    body = await request.json()
+    path = body.get('path')
+    role = body.get('role', 'unknown')
+
+    if not path:
+        return JSONResponse(status_code=400, content={"error": "缺少文件路径"})
+
+    # 检查数据集是否存在
+    conn = get_conn()
+    try:
+        ds = _find_ds(conn, ds_id)
+    finally:
+        conn.close()
+
+    if not ds:
+        return JSONResponse(status_code=404, content={"error": "数据集不存在"})
+
+    # 从数据存储下载文件
+    try:
+        contents = storage.load_bytes(path)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": f"读取文件失败: {str(e)}"})
+
+    # 提取文件名
+    filename = path.split('/')[-1]
+
+    # 保存到数据集的raw目录
+    remote_path = f'datasets/{ds_id}/raw/{filename}'
+    try:
+        storage.save_bytes(contents, remote_path)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": f"保存文件失败: {str(e)}"})
+
+    # 解析文件头，推断列结构
+    suggested = _parse_file_header(contents, filename)
+
+    # 分析文件
+    analysis = {'rows': 0, 'cols': 0}
+    try:
+        arr = np.loadtxt(io.BytesIO(contents), comments='%')
+        analysis = {
+            'rows': int(arr.shape[0]),
+            'cols': int(arr.shape[1]) if arr.ndim > 1 else 1
+        }
+    except Exception as e:
+        print(f"[dataset] 文件分析警告: {e}")
+
+    # 解析 conditionValue（针对perfile模式）
+    cv = None
+    if ds.get('dataOrg') == 'perfile':
+        import re
+        m = re.search(r'(\d+(?:\.\d+)?)', filename)
+        if m:
+            try:
+                cv = float(m.group(1))
+            except:
+                pass
+
+    # 保存文件记录到数据库
+    conn = get_conn()
+    try:
+        with get_dict_cursor(conn) as cur:
+            var_idx = None
+            if role == 'input':
+                var_idx = 0  # 默认第一个输入变量
+
+            cur.execute("""
+                INSERT INTO t_dataset_file
+                (dataset_id, filename, role, variable_index, condition_value, file_size, analysis, storage_path, upload_time_str)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW()::text)
+                RETURNING *
+            """, (
+                ds_id, filename, role, var_idx, cv,
+                len(contents), json.dumps(analysis), remote_path
+            ))
+            frow = cur.fetchone()
+
+            # 更新数据集的 outputVariable.spatialPoints
+            if role == 'output' and analysis.get('rows'):
+                cur.execute(
+                    "UPDATE t_dataset SET output_variable = output_variable || %s WHERE id=%s",
+                    (json.dumps({'spatialPoints': analysis['rows']}), ds_id)
+                )
+
+            # 更新 perfile 模式的工况数量
+            if ds.get('dataOrg') == 'perfile':
+                cur.execute(
+                    "SELECT COUNT(*) as cnt FROM t_dataset_file WHERE dataset_id=%s AND role='output'",
+                    (ds_id,)
+                )
+                n_cond = cur.fetchone()['cnt']
+                cur.execute(
+                    "UPDATE t_dataset SET output_variable = output_variable || %s WHERE id=%s",
+                    (json.dumps({'conditionCount': n_cond, 'spatialPoints': analysis['rows']}), ds_id)
+                )
+
+        conn.commit()
+        file_info = _file_row_to_dict(frow)
+    finally:
+        conn.close()
+
+    return {
+        "message": f"{filename} 导入成功",
+        "file": file_info,
+        "analysis": analysis,
+        "suggested": suggested
+    }
 
 
 @router.put('/{ds_id}/files/{filename}/role')

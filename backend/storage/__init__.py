@@ -8,6 +8,17 @@ from .base import StorageBackend
 from .local import LocalStorage
 from .minio_storage import MinIOStorage
 
+# 加载.env文件（如果存在）
+try:
+    from dotenv import load_dotenv
+    import pathlib
+    env_path = pathlib.Path(__file__).parent.parent.parent / '.env'
+    if env_path.exists():
+        load_dotenv(env_path)
+        print(f"[Storage] 已加载配置文件: {env_path}")
+except ImportError:
+    pass
+
 # 从环境变量读取配置
 STORAGE_BACKEND = os.environ.get("STORAGE_BACKEND", "local")
 
@@ -32,4 +43,5 @@ def get_storage() -> StorageBackend:
 
 
 __all__ = ['get_storage', 'StorageBackend']
+
 

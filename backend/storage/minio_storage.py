@@ -47,11 +47,17 @@ class MinIOStorage(StorageBackend):
     def _ensure_bucket(self):
         """确保bucket存在，不存在则创建"""
         try:
-            if not self.client.bucket_exists(self.bucket_name):
-                self.client.make_bucket(self.bucket_name)
-                print(f"[MinIOStorage] 创建bucket: {self.bucket_name}")
+            # 直接尝试创建bucket，如果已存在会抛出BucketAlreadyOwnedByYou错误
+            self.client.make_bucket(self.bucket_name)
+            print(f"[MinIOStorage] 创建bucket: {self.bucket_name}")
         except S3Error as e:
-            print(f"[MinIOStorage] Bucket检查失败: {e}")
+            # Bucket已存在是正常情况
+            if 'BucketAlreadyOwnedByYou' in str(e) or 'BucketAlreadyExists' in str(e):
+                print(f"[MinIOStorage] Bucket '{self.bucket_name}' 已存在")
+            else:
+                print(f"[MinIOStorage] Bucket检查/创建错误: {e}")
+        except Exception as e:
+            print(f"[MinIOStorage] Bucket初始化失败: {e}")
 
     def save_file(self, local_path: str, remote_path: str) -> str:
         """上传文件到MinIO"""
@@ -165,4 +171,7 @@ class MinIOStorage(StorageBackend):
             return url
         except S3Error as e:
             raise RuntimeError(f"生成URL失败: {e}")
+
+
+
 

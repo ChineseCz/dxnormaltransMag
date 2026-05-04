@@ -1,147 +1,174 @@
 <template>
-  <div class="p-6 space-y-5">
-    <div class="flex items-center justify-between">
+  <div class="p-6 space-y-6 min-h-full">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-2xl font-bold text-cyan-300">数据存储</h1>
-        <p class="text-slate-400 text-xs mt-1">按模板组织文件，支持文件夹树形结构和批量上传</p>
+        <div class="flex items-center gap-3">
+          <div class="rounded-xl flex items-center justify-center flex-shrink-0"
+               style="width:36px;height:36px;background:linear-gradient(135deg,#0891b2,#0ea5e9); box-shadow:0 0 20px rgba(8,145,178,0.4);">
+            <el-icon size="20" style="color:white;"><FolderOpened /></el-icon>
+          </div>
+          <h1 class="text-2xl font-extrabold tracking-tight"
+              style="background:linear-gradient(90deg,#2dd4bf,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+            数据存储
+          </h1>
+        </div>
+        <p class="text-slate-500 text-xs mt-1.5 ml-[48px]">按模板组织文件，支持文件夹树形结构和批量上传</p>
       </div>
-      <div class="flex items-center gap-2">
-        <el-select v-model="activeTemplate" size="small" style="width:200px" @change="onTemplateChange">
+      <div class="flex items-center gap-3">
+        <el-select v-model="activeTemplate" size="default" style="width:200px" @change="onTemplateChange">
           <el-option v-for="t in templates" :key="t.key" :label="t.name" :value="t.key" />
         </el-select>
-        <el-button size="small" type="primary" @click="showCreateFolderDialog = true">
+        <button @click="showCreateFolderDialog = true"
+          class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:scale-105"
+          style="background:linear-gradient(135deg,#0891b2,#0ea5e9); border:1px solid rgba(14,165,233,0.4); box-shadow:0 0 16px rgba(8,145,178,0.35);">
           <el-icon><FolderAdd /></el-icon>
           新建文件夹
-        </el-button>
-        <el-button size="small" @click="loadAll">
+        </button>
+        <button @click="loadAll"
+          class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all hover:scale-105"
+          style="background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.3); color:#a5b4fc;">
           <el-icon><Refresh /></el-icon>
           刷新
-        </el-button>
+        </button>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-5">
-      <!-- 左侧：模板说明 + 文件夹树 -->
-      <el-card style="background:rgba(10,18,36,0.85); border:1px solid rgba(51,65,85,0.4);" class="lg:col-span-1">
-        <!-- 当前模板说明 -->
-        <template #header>
-          <div class="flex items-center justify-between">
-            <span class="text-slate-200 font-semibold">{{ currentTemplateName }}</span>
-            <el-tag size="small" type="info">{{ activeTemplate }}</el-tag>
-          </div>
-        </template>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- 左侧：文件夹树 -->
+      <div class="lg:col-span-1">
+        <div class="rounded-2xl p-6 transition-all duration-200 hover:scale-[1.01]"
+             style="background:rgba(10,18,36,0.85); border:1px solid rgba(51,65,85,0.4);">
 
-        <div class="mb-4 p-3 rounded text-xs text-slate-400"
-             style="background:rgba(2,8,23,0.5);border:1px solid rgba(51,65,85,0.3);">
-          <div class="font-mono text-cyan-300 mb-2">template_storage/{{ activeTemplate }}/</div>
-          <div>{{ getTemplateDescription(activeTemplate) }}</div>
-        </div>
-
-        <!-- 文件夹树 -->
-        <div class="mb-3 text-sm font-semibold text-slate-300 flex items-center justify-between">
-          <span>文件夹结构</span>
-          <el-tag size="small" type="info">{{ folderCount }}</el-tag>
-        </div>
-
-        <el-tree
-          :data="folderTree"
-          :props="{ label: 'name', children: 'children' }"
-          node-key="path"
-          highlight-current
-          default-expand-all
-          @node-click="handleFolderClick"
-          class="folder-tree"
-        >
-          <template #default="{ node, data }">
-            <div class="flex items-center justify-between w-full">
-              <div class="flex items-center gap-2">
-                <el-icon><Folder /></el-icon>
-                <span class="text-sm">{{ node.label }}</span>
+          <!-- 模板信息 -->
+          <div class="mb-6">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-12 h-12 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+                   style="background:linear-gradient(135deg,#0891b2,#0ea5e9);">
+                <el-icon size="22" style="color:white;"><Document /></el-icon>
               </div>
-              <div class="flex items-center gap-1 text-xs text-slate-400">
-                <span>{{ data.fileCount || 0 }}</span>
-                <el-dropdown trigger="click" @command="(cmd) => handleFolderAction(cmd, data)" v-if="data.path !== '/'">
-                  <el-icon class="cursor-pointer hover:text-cyan-400"><MoreFilled /></el-icon>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item command="rename">重命名</el-dropdown-item>
-                      <el-dropdown-item command="delete">删除</el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
+              <div class="flex-1 min-w-0">
+                <div class="text-white font-bold text-base truncate">{{ currentTemplateName }}</div>
+                <div class="text-xs text-slate-400 font-mono mt-0.5">{{ activeTemplate }}</div>
               </div>
             </div>
-          </template>
-        </el-tree>
 
-        <!-- 统计信息 -->
-        <div class="mt-4 p-3 rounded" style="background:rgba(2,8,23,0.5);border:1px solid rgba(51,65,85,0.3);">
-          <div class="text-xs text-slate-400 space-y-1">
-            <div class="flex justify-between">
-              <span>文件总数：</span>
-              <span class="text-cyan-300">{{ totalFiles }}</span>
+            <div class="p-4 rounded-xl text-sm leading-relaxed"
+                 style="background:rgba(2,8,23,0.5); border:1px solid rgba(51,65,85,0.3);">
+              <div class="font-mono text-cyan-300 text-xs mb-2 flex items-center gap-2">
+                <el-icon size="14"><Folder /></el-icon>
+                <span>template_storage/{{ activeTemplate }}/</span>
+              </div>
+              <div class="text-slate-400 text-xs">{{ getTemplateDescription(activeTemplate) }}</div>
             </div>
-            <div class="flex justify-between">
-              <span>总大小：</span>
-              <span class="text-cyan-300">{{ formatBytes(totalSize) }}</span>
+          </div>
+
+          <!-- 文件夹树 -->
+          <div class="mb-5">
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-base font-bold text-white">文件夹结构</span>
+              <span class="text-xs font-mono px-2.5 py-1 rounded-lg"
+                    style="background:rgba(51,65,85,0.3); color:#64748b;">
+                {{ folderCount }} 个
+              </span>
+            </div>
+
+            <el-tree
+              :data="folderTree"
+              :props="{ label: 'name', children: 'children' }"
+              node-key="path"
+              highlight-current
+              default-expand-all
+              @node-click="handleFolderClick"
+              class="folder-tree"
+            >
+              <template #default="{ node, data }">
+                <div class="flex items-center justify-between w-full py-1">
+                  <div class="flex items-center gap-2.5">
+                    <el-icon size="16"><Folder /></el-icon>
+                    <span class="text-sm font-medium">{{ node.label }}</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-500 font-mono">{{ data.fileCount || 0 }}</span>
+                    <el-dropdown trigger="click" @command="(cmd) => handleFolderAction(cmd, data)" v-if="data.path !== '/'">
+                      <el-icon class="cursor-pointer hover:text-cyan-400" size="14"><MoreFilled /></el-icon>
+                      <template #dropdown>
+                        <el-dropdown-menu>
+                          <el-dropdown-item command="rename">重命名</el-dropdown-item>
+                          <el-dropdown-item command="delete">删除</el-dropdown-item>
+                        </el-dropdown-menu>
+                      </template>
+                    </el-dropdown>
+                  </div>
+                </div>
+              </template>
+            </el-tree>
+          </div>
+
+          <!-- 统计信息 -->
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 rounded-xl text-center" style="background:rgba(2,8,23,0.5); border:1px solid rgba(51,65,85,0.3);">
+              <div class="text-xs text-slate-500 mb-1">文件总数</div>
+              <div class="text-lg text-cyan-300 font-mono font-bold">{{ totalFiles }}</div>
+            </div>
+            <div class="p-4 rounded-xl text-center" style="background:rgba(2,8,23,0.5); border:1px solid rgba(51,65,85,0.3);">
+              <div class="text-xs text-slate-500 mb-1">总大小</div>
+              <div class="text-lg text-emerald-300 font-mono font-bold">{{ formatBytes(totalSize) }}</div>
             </div>
           </div>
         </div>
-      </el-card>
+      </div>
 
       <!-- 右侧：文件列表 -->
-      <el-card style="background:rgba(10,18,36,0.85); border:1px solid rgba(51,65,85,0.4);" class="lg:col-span-3">
-        <template #header>
-          <div class="flex items-center justify-between">
-            <span class="text-slate-200 font-semibold">
-              文件列表
-              <span class="text-slate-400 text-xs ml-2" v-if="currentFolderPath">
-                ({{ currentFolderPath }})
-              </span>
-            </span>
-            <div class="flex items-center gap-2">
+      <div class="lg:col-span-2">
+        <div class="rounded-2xl p-6 transition-all duration-200 hover:scale-[1.01]"
+             style="background:rgba(10,18,36,0.85); border:1px solid rgba(51,65,85,0.4);">
+
+          <!-- Header -->
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <div class="text-white font-bold text-lg mb-1">文件列表</div>
+              <div class="text-slate-500 text-xs" v-if="currentFolderPath">
+                <span class="font-mono">{{ currentFolderPath }}</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
               <el-input
                 v-model="searchKeyword"
                 placeholder="搜索文件..."
-                size="small"
+                size="default"
                 style="width:200px"
                 clearable
               >
                 <template #prefix><el-icon><Search /></el-icon></template>
               </el-input>
+              <!-- 上传按钮 -->
+              <el-upload
+                multiple
+                :action="uploadAction"
+                name="file"
+                :data="uploadData"
+                :on-success="onUploadSuccess"
+                :on-error="onUploadError"
+                :before-upload="beforeUpload"
+                :show-file-list="false"
+              >
+                <button class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:scale-105"
+                        style="background:linear-gradient(135deg,#0891b2,#0ea5e9); border:1px solid rgba(14,165,233,0.4); box-shadow:0 0 16px rgba(8,145,178,0.35);">
+                  <el-icon><UploadFilled /></el-icon>
+                  上传文件
+                </button>
+              </el-upload>
             </div>
           </div>
-        </template>
-
-        <!-- 批量上传区域 -->
-        <el-upload
-          drag
-          multiple
-          :action="uploadAction"
-          name="file"
-          :data="uploadData"
-          :on-success="onUploadSuccess"
-          :on-error="onUploadError"
-          :before-upload="beforeUpload"
-          class="mb-4"
-        >
-          <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
-          <div class="el-upload__text">
-            拖拽文件到此处或<em>点击上传</em>
-          </div>
-          <template #tip>
-            <div class="el-upload__tip text-xs text-slate-400">
-              支持批量上传，文件将保存到 {{ activeTemplate }}/{{ currentFolderPath || '根目录' }}
-            </div>
-          </template>
-        </el-upload>
 
         <!-- 文件表格 -->
         <el-table
-          :data="filteredFiles"
+          :data="paginatedFiles"
           size="small"
           v-loading="loading"
           @selection-change="handleSelectionChange"
+          height="calc(100vh - 400px)"
         >
           <el-table-column type="selection" width="50" />
           <el-table-column prop="filename" label="文件名" min-width="220">
@@ -170,16 +197,44 @@
           </el-table-column>
         </el-table>
 
+        <!-- 分页组件 -->
+        <div class="mt-4 flex justify-end">
+          <el-pagination
+            v-model:current-page="currentPage"
+            v-model:page-size="pageSize"
+            :page-sizes="[20, 50, 100, 200]"
+            :total="filteredFiles.length"
+            layout="total, sizes, prev, pager, next, jumper"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+          />
+        </div>
+
         <!-- 批量操作栏 -->
-        <div v-if="selectedFiles.length > 0" class="mt-4 p-3 rounded flex items-center justify-between"
-             style="background:rgba(14,165,233,0.12);border:1px solid rgba(14,165,233,0.3);">
-          <span class="text-sm text-slate-300">已选择 {{ selectedFiles.length }} 个文件</span>
+        <div v-if="selectedFiles.length > 0" class="mt-5 p-4 rounded-xl flex items-center justify-between transition-all"
+             style="background:linear-gradient(135deg,rgba(6,182,212,0.15),rgba(8,145,178,0.15)); border:1px solid rgba(6,182,212,0.4); box-shadow:0 0 20px rgba(6,182,212,0.2);">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                 style="background:rgba(6,182,212,0.3);">
+              <el-icon size="16" style="color:#22d3ee;"><Check /></el-icon>
+            </div>
+            <span class="text-sm font-semibold text-cyan-300">已选择 {{ selectedFiles.length }} 个文件</span>
+          </div>
           <div class="flex gap-2">
-            <el-button size="small" @click="showMoveDialog = true">移动到...</el-button>
-            <el-button size="small" type="danger" @click="batchDelete">批量删除</el-button>
+            <button @click="showMoveDialog = true"
+                    class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:scale-105"
+                    style="background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); color:#a5b4fc;">
+              移动到...
+            </button>
+            <button @click="batchDelete"
+                    class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:scale-105"
+                    style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#f87171;">
+              批量删除
+            </button>
           </div>
         </div>
-      </el-card>
+        </div>
+      </div>
     </div>
 
     <!-- 创建文件夹对话框 -->
@@ -266,6 +321,10 @@ const totalFiles = ref(0);
 const totalSize = ref(0);
 const folderCount = ref(0);
 
+// 分页状态
+const currentPage = ref(1);
+const pageSize = ref(50);
+
 // 对话框
 const showCreateFolderDialog = ref(false);
 const showRenameFileDialog = ref(false);
@@ -317,6 +376,23 @@ const filteredFiles = computed(() => {
     f.filename.toLowerCase().includes(keyword)
   );
 });
+
+// 分页后的文件列表
+const paginatedFiles = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  const end = start + pageSize.value;
+  return filteredFiles.value.slice(start, end);
+});
+
+// 分页处理函数
+function handleSizeChange(val) {
+  pageSize.value = val;
+  currentPage.value = 1; // 重置到第一页
+}
+
+function handleCurrentChange(val) {
+  currentPage.value = val;
+}
 
 // 模板切换
 function onTemplateChange() {
@@ -485,16 +561,52 @@ async function createFolder() {
         name: folderForm.value.name
       })
     });
+    const data = await res.json();
     if (res.ok) {
       ElMessage.success('创建成功');
       showCreateFolderDialog.value = false;
+
+      // 立即在本地更新文件夹树，不等待后端刷新
+      const newFolderPath = data.path;
+      const newFolder = {
+        name: folderForm.value.name,
+        path: newFolderPath,
+        fileCount: 0,
+        children: []
+      };
+
+      // 将新文件夹添加到树中
+      if (!folderForm.value.parentPath || folderForm.value.parentPath === '/') {
+        // 添加到根目录
+        folderTree.value[0].children.push(newFolder);
+      } else {
+        // 添加到指定父文件夹
+        function addToParent(nodes) {
+          for (let node of nodes) {
+            if (node.path === folderForm.value.parentPath) {
+              node.children.push(newFolder);
+              return true;
+            }
+            if (node.children && node.children.length > 0) {
+              if (addToParent(node.children)) return true;
+            }
+          }
+          return false;
+        }
+        addToParent(folderTree.value);
+      }
+
+      // 更新扁平列表
+      flatFolders.value = flattenTree(folderTree.value);
+      folderCount.value = flatFolders.value.length;
+
+      // 重置表单
       folderForm.value = { name: '', parentPath: '/' };
-      loadFolderTree();
     } else {
-      ElMessage.error('创建失败');
+      ElMessage.error(data.error || '创建失败');
     }
   } catch (error) {
-    ElMessage.error('创建失败');
+    ElMessage.error('创建失败: ' + error.message);
   }
 }
 

@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker exec *)",
+      "Bash(curl *)",
+      "Bash(python -c ' *)",
+      "Bash(mv -v PROJECT_STRUCTURE.md .context/claudeMd/)",
+      "Bash(mv -v PROGRESS_QUICK.md .context/claudeMd/)",
+      "Bash(mv -v AI_CHAT_IMPLEMENTATION.md .context/claudeMd/)",
+      "Bash(mv -v AI_CONTEXT_INJECTION_FIX_V2.md .context/claudeMd/)",
+      "Bash(mv -v .context/FILE_SYSTEM_DESIGN.md .context/claudeMd/)",
+      "Bash(python -m json.tool)",
+      "Bash(python -c \"import sys, json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d, indent=2, ensure_ascii=False\\)\\)\")",
+      "Bash(python -c \"import sys, json; d=json.load\\(sys.stdin\\); models=d.get\\('models',[]\\); print\\(f'Total models: {len\\(models\\)}'\\); [print\\(f\\\\\"\\\\\\\\nModel {i+1}:\\\\\\\\n  ID: {m.get\\('id'\\)}\\\\\\\\n  Type: {m.get\\('model_type'\\)}\\\\\\\\n  Dataset: {m.get\\('dataset_id'\\)}\\\\\\\\n  Status: {m.get\\('status'\\)}\\\\\\\\n  Config: {m.get\\('config'\\)[:200] if m.get\\('config'\\) else 'None'}...\\\\\"\\) for i,m in enumerate\\(models[:3]\\)]\")",
+      "Bash(xargs grep *)",
+      "Bash(Get-ChildItem *)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(python *)"
+    ]
+  }
+}

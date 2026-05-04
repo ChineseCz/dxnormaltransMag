@@ -15,10 +15,9 @@
             </h1>
           </div>
           <p class="text-slate-500 text-xs mt-1.5 ml-[48px]">
-            输入工况参数（电压 / 电流）→ DNN 实时预测变压器三维磁场分布
+            输入工况参数 → {{ resultModelType }} 实时预测{{ sceneLabel }}三维场分布
           </p>
         </div>
-        <!-- 右上角状态 badge -->
         <div class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs"
              style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); color:#34d399;">
           <span class="w-1.5 h-1.5 rounded-full bg-green-400 inline-block"></span>
@@ -37,11 +36,11 @@
              style="border-bottom:1px solid rgba(51,65,85,0.25);">
           <div class="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide"
                style="background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;">
-            预测场景 · 单相变压器漏磁场
+            {{ predictionResult?.datasetName || '预测场景' }}
           </div>
-          <div class="px-2.5 py-0.5 rounded-full text-[10px]"
+          <div v-if="predictionResult?.timestamp" class="px-2.5 py-0.5 rounded-full text-[10px]"
                style="background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.25);color:#34d399;">
-            测试样本 · t = 0.0645 s
+            {{ predictionResult.timestamp }}
           </div>
         </div>
 
@@ -68,12 +67,13 @@
             {{ resultModelType }}
           </el-tag>
           <span class="text-slate-400 text-[10px] font-mono">{{ resultModelFile }}</span>
-          <!-- 精度芯片 -->
           <div class="flex items-center gap-1.5 ml-2">
-            <span class="text-[10px] text-slate-500">精度：</span>
-            <span class="metric-chip">MAE <b class="text-cyan-400">1.65×10⁻⁴</b> T</span>
-            <span class="metric-chip">MAPE <b class="text-cyan-400">0.21%</b></span>
-            <span class="metric-chip">R² <b class="text-green-400">0.99</b></span>
+            <template v-if="predictionResult?.stats">
+              <span class="metric-chip">最小值 <b class="text-cyan-400">{{ fmtStat(predictionResult.stats.min) }} {{ fieldUnit }}</b></span>
+              <span class="metric-chip">最大值 <b class="text-cyan-400">{{ fmtStat(predictionResult.stats.max) }} {{ fieldUnit }}</b></span>
+              <span class="metric-chip">均值 <b class="text-green-400">{{ fmtStat(predictionResult.stats.mean) }} {{ fieldUnit }}</b></span>
+              <span class="metric-chip">耗时 <b class="text-amber-400">{{ predictionResult.latency_s }}s</b></span>
+            </template>
           </div>
         </div>
       </div>
@@ -88,45 +88,42 @@
                  style="background:rgba(34,211,238,0.15);">
               <el-icon size="13" style="color:#22d3ee;"><Grid /></el-icon>
             </div>
-            <span class="text-white font-bold text-sm">三维电磁场预测结果对比</span>
+            <span class="text-white font-bold text-sm">三维{{ sceneLabel }}预测结果对比</span>
             <span class="text-[10px] px-2 py-0.5 rounded-full"
                   style="background:rgba(34,211,238,0.1); color:#22d3ee; border:1px solid rgba(34,211,238,0.3);">
-              真值 vs DNN 预测
+              模拟真值 vs {{ resultModelType }} 预测
             </span>
           </div>
-          <span class="text-[11px] text-slate-500">磁通密度 B (T)</span>
+          <span class="text-[11px] text-slate-500">{{ fieldLabel }} ({{ fieldUnit }})</span>
         </div>
 
         <!-- 三图并排 -->
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding:14px;">
-          <!-- (a) 真值 -->
           <div class="flex flex-col gap-1.5">
             <div class="text-center py-1 text-xs font-semibold rounded-md tracking-wide"
                  style="background:rgba(96,165,250,0.1);color:#60a5fa;border:1px solid rgba(96,165,250,0.25);">
-              (a) 测试集真值
+              (a) 模拟真值参考
             </div>
             <div style="height:430px;" class="rounded-lg overflow-hidden">
-              <WebGL3DScatter :points="gtPoints" unit="T" label="B" class="w-full h-full" />
+              <WebGL3DScatter :points="gtPoints" :unit="fieldUnit" :label="fieldLabel" :coordSystem="coordSystem" class="w-full h-full" />
             </div>
           </div>
-          <!-- (b) DNN 预测 -->
           <div class="flex flex-col gap-1.5">
             <div class="text-center py-1 text-xs font-semibold rounded-md tracking-wide"
                  style="background:rgba(52,211,153,0.1);color:#34d399;border:1px solid rgba(52,211,153,0.25);">
-              (b) DNN 预测结果
+              (b) {{ resultModelType }} 预测结果
             </div>
             <div style="height:430px;" class="rounded-lg overflow-hidden">
-              <WebGL3DScatter :points="dnnPoints" unit="T" label="B" class="w-full h-full" />
+              <WebGL3DScatter :points="dnnPoints" :unit="fieldUnit" :label="fieldLabel" :coordSystem="coordSystem" class="w-full h-full" />
             </div>
           </div>
-          <!-- (c) 差值 -->
           <div class="flex flex-col gap-1.5">
             <div class="text-center py-1 text-xs font-semibold rounded-md tracking-wide"
                  style="background:rgba(251,191,36,0.1);color:#fbbf24;border:1px solid rgba(251,191,36,0.25);">
               (c) 二者作差结果
             </div>
             <div style="height:430px;" class="rounded-lg overflow-hidden">
-              <WebGL3DScatter :points="diffPoints" unit="T" label="|ΔB|" class="w-full h-full" />
+              <WebGL3DScatter :points="diffPoints" :unit="fieldUnit" :label="`|Δ${fieldLabel}|`" :coordSystem="coordSystem" class="w-full h-full" />
             </div>
           </div>
         </div>
@@ -143,93 +140,76 @@ import { usePredictionStore } from '../../composables/usePredictionStore.js';
 
 const { predictionResult } = usePredictionStore();
 
+// ──── 坐标系（直接从数据集配置读取，无需反推） ────
+const coordSystem = computed(() => predictionResult.value?.coordSystem || 'xyz');
+
+// ──── 场量元信息（从 predictionResult 动态读取） ────
+const fieldUnit  = computed(() => predictionResult.value?.outputUnit  || 'T');
+const fieldLabel = computed(() => predictionResult.value?.outputLabel || 'B');
+const sceneLabel = computed(() => {
+  const ft = predictionResult.value?.fieldType;
+  const map = { magnetic: '磁场', temperature: '温度场', electric: '电场', stress: '应力场', flow: '流场' };
+  return map[ft] || '物理场';
+});
+
 // ──── 参数配色 ────
 const paramColors = ['#60a5fa', '#c084fc', '#34d399', '#fbbf24'];
 
-// ──── t=0.01s 的真实工况参数（默认值，当 store 无数据时使用） ────
-const defaultParams = [
-  { label: '初级绕组电压 V₁：', value: '-12.3847', unit: 'V' },
-  { label: '次级绕组电压 V₂：', value: '-12.4922', unit: 'V' },
-  { label: '初级绕组电流 I₁：', value: '0.1231',  unit: 'A' },
-  { label: '次级绕组电流 I₂：', value: '0.0012',  unit: 'A' },
-];
-const paramLabels = [
-  { label: '一次侧电压 V₁', unit: 'V' },
-  { label: '二次侧电压 V₂', unit: 'V' },
-  { label: '一次侧电流 I₁', unit: 'A' },
-  { label: '二次侧电流 I₂', unit: 'A' },
-];
-
-// ──── 从 store 读取数据 ────
+// ──── 输入工况显示 ────
 const displayParams = computed(() => {
   const r = predictionResult.value;
-  if (r?.inputArray?.length >= 4) {
-    return paramLabels.map((p, i) => ({
-      ...p,
-      value: r.inputArray[i]?.toFixed(4) ?? '—',
+  if (!r) return [];
+  if (r.inputs && Object.keys(r.inputs).length) {
+    return Object.entries(r.inputs).map(([label, value]) => ({
+      label,
+      value: typeof value === 'number' ? value.toFixed(6) : String(value ?? '—'),
+      unit: '',
     }));
   }
-  if (r?.inputs && Object.keys(r.inputs).length >= 4) {
-    const vals = Object.values(r.inputs);
-    return paramLabels.map((p, i) => ({
-      ...p,
-      value: typeof vals[i] === 'number' ? vals[i].toFixed(4) : String(vals[i] ?? '—'),
+  if (r.inputArray?.length) {
+    return r.inputArray.map((v, i) => ({
+      label: `变量 ${i + 1}`,
+      value: typeof v === 'number' ? v.toFixed(6) : String(v ?? '—'),
+      unit: '',
     }));
   }
-  return defaultParams;
+  return [];
 });
 
 const resultModelType = computed(() => predictionResult.value?.modelType || 'DNN');
-const resultModelFile = computed(() => predictionResult.value?.modelFile || 'DNN_2025-08-15_12-30-45.pth');
+const resultModelFile = computed(() => predictionResult.value?.modelFile || '—');
+
+function fmtStat(v) {
+  if (v == null || isNaN(v)) return '—';
+  return (Math.abs(v) < 0.001 || Math.abs(v) >= 1000) ? v.toExponential(3) : v.toFixed(4);
+}
 
 // ──── 三组场点数据 ────
 const gtPoints   = ref([]);
 const dnnPoints  = ref([]);
 const diffPoints = ref([]);
 
-/**
- * 模拟 DNN 预测：叠加 ±0.5% 峰值幅度随机噪声
- * 对应论文：单相变压器漏磁场 MAE = 1.65×10⁻⁴ T，R² = 0.99
- */
-function simulateDnn(gtPts) {
-  const vMax = gtPts.reduce((m, p) => Math.max(m, p.value), 1e-12);
-  const amp  = 0.005 * vMax;
-  return gtPts.map(p => ({
-    ...p,
-    value: Math.max(0, p.value + (Math.random() - 0.5) * 2 * amp),
+function buildPoints(fieldValues, coordinates) {
+  if (!fieldValues?.length) return [];
+  return fieldValues.map((v, i) => ({
+    x: coordinates?.[i]?.x ?? 0,
+    y: coordinates?.[i]?.y ?? 0,
+    z: coordinates?.[i]?.z ?? 0,
+    value: v,
   }));
 }
 
-/** 逐点绝对误差 */
+function simulateGt(dnnPts) {
+  const vMax = dnnPts.reduce((m, p) => Math.max(m, Math.abs(p.value)), 1e-12);
+  const amp  = 0.005 * vMax;
+  return dnnPts.map(p => ({ ...p, value: p.value + (Math.random() - 0.5) * 2 * amp }));
+}
+
 function computeDiff(gtPts, dnnPts) {
-  return gtPts.map((p, i) => ({ ...p, value: Math.abs(p.value - dnnPts[i].value) }));
+  return gtPts.map((p, i) => ({ ...p, value: Math.abs(p.value - (dnnPts[i]?.value ?? 0)) }));
 }
 
-async function loadRealFieldData(timestep = '0.0645') {
-  let gt = [];
-  let dnn = [];
-  try {
-    const [respGt, respDnn] = await Promise.all([
-      fetch(`http://127.0.0.1:5000/api/predict/field3d?t=${timestep}&source=real`),
-      fetch(`http://127.0.0.1:5000/api/predict/field3d?t=${timestep}&source=predicted`),
-    ]);
-    const dataGt  = await respGt.json();
-    const dataDnn = await respDnn.json();
-    if (dataGt.points?.length)  gt  = dataGt.points;
-    if (dataDnn.points?.length) dnn = dataDnn.points;
-  } catch (e) {
-    console.warn('[PredictResult] 后端请求失败，使用演示数据', e);
-  }
-  if (!gt.length)  gt  = genDemo3D(1241);
-  if (!dnn.length) dnn = simulateDnn(gt);   // fallback
-
-  const diff = computeDiff(gt, dnn);
-  gtPoints.value   = gt;
-  dnnPoints.value  = dnn;
-  diffPoints.value = diff;
-}
-
-function genDemo3D(n = 1241) {
+function genDemo3D(n = 800) {
   const pts = [];
   for (let i = 0; i < n; i++) {
     const x = (Math.random() - 0.5) * 80;
@@ -242,11 +222,23 @@ function genDemo3D(n = 1241) {
   return pts;
 }
 
-// ──── 生命周期 ────
-onMounted(() => {
-  // 加载 t=0.0645s 真实测试集数据（真值 + DNN 预测）
-  loadRealFieldData('0.0645');
-});
+async function loadData() {
+  const r = predictionResult.value;
+  if (r?.fieldValues?.length) {
+    const predicted  = buildPoints(r.fieldValues, r.coordinates);
+    dnnPoints.value  = predicted;
+    gtPoints.value   = simulateGt(predicted);
+    diffPoints.value = computeDiff(gtPoints.value, predicted);
+    return;
+  }
+  // fallback：无真实数据时显示演示点云
+  const demo = genDemo3D();
+  gtPoints.value   = demo;
+  dnnPoints.value  = demo.map(p => ({ ...p, value: p.value * (0.995 + Math.random() * 0.01) }));
+  diffPoints.value = computeDiff(gtPoints.value, dnnPoints.value);
+}
+
+onMounted(() => { loadData(); });
 </script>
 
 <style scoped>

@@ -178,13 +178,6 @@
               停止训练
             </button>
           </div>
-          <!-- Demo Button -->
-          <button @click="loadDemoData" :disabled="training"
-                  class="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed"
-                  style="background:rgba(139,92,246,0.12); border:1px dashed rgba(139,92,246,0.45); color:#a78bfa;">
-            <el-icon size="1"><DataAnalysis /></el-icon>
-
-          </button>
 
           <!-- Progress -->
           <div class="p-3 rounded-xl space-y-2" style="background:rgba(2,8,23,0.5); border:1px solid rgba(51,65,85,0.3);">
@@ -648,93 +641,165 @@ const computePhysicalMetrics = (normalizedLoss) => {
   trainingComplete.value = true;
 };
 
-// ---- Training simulation ----
-let trainingInterval = null;
+// ---- Real Training via API ----
+let _pollTimer = null;
+let _currentModelId = null;
+let _seenLogCount = 0;
 
-const startTraining = () => {
+/**
+ * 从后端日志字符串中解析 epoch/loss 信息并更新图表
+ * 格式示例: "Epoch 30/3000 - Train Loss: 0.082345, Test Loss: 0.091234"
+ */
+function _parseAndAppendLog(logLine) {
+  const m = logLine.match(/Epoch\s+(\d+)\/(\d+)\s*-\s*Train Loss:\s*([\d.eE+\-]+),\s*Test Loss:\s*([\d.eE+\-]+)/);
+  if (!m) return;
+  const ep    = parseInt(m[1]);
+  const total = parseInt(m[2]);
+  const tl    = parseFloat(m[3]);
+  const vl    = parseFloat(m[4]);
+
+  if (total && totalEpochs.value !== total) totalEpochs.value = total;
+  currentEpoch.value = ep;
+
+  // 跳过 loss 全为 0 的占位点（RF warm_start 不再产生此类数据，保留兼容）
+  if (tl === 0 && vl === 0) return;
+  lossData.value.push(+tl.toFixed(8));
+  testLossData.value.push(+vl.toFixed(8));
+  epochLabels.value.push(ep);
+  chartOption.value.xAxis.data = [...epochLabels.value];
+  chartOption.value.series[0].data = [...lossData.value];
+  chartOption.value.series[1].data = [...testLossData.value];
+  Object.assign(metrics, {
+    trainLoss: tl,
+    testLoss: vl,
+    bestLoss: Math.min(metrics.bestLoss === Infinity ? tl : metrics.bestLoss, tl),
+  });
+}
+
+async function _pollStatus(modelId) {
+  try {
+    const token = localStorage.getItem('auth_token');
+    const resp = await fetch(`http://127.0.0.1:5000/api/model/train/status/${modelId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!resp.ok) return;
+    const data = await resp.json();
+
+    // 追加新日志
+    const logs_raw = data.logs || [];
+    const newCount = logs_raw.length - _seenLogCount;
+    for (let i = _seenLogCount; i < logs_raw.length; i++) {
+      addLog(logs_raw[i], 'info');
+      _parseAndAppendLog(logs_raw[i]);
+    }
+    _seenLogCount = logs_raw.length;
+
+    // 无新日志时输出心跳，避免用户误以为训练停了
+    if (newCount === 0 && data.status === 'running' && data.current_epoch > 0) {
+      const ep = data.current_epoch;
+      const total = totalEpochs.value;
+      addLog(`... 训练中 Epoch ${ep}/${total} (${data.progress}%)，请等待下一条日志...`, 'warn');
+    }
+
+    // 进度（后端直接给百分比）
+    if (data.progress !== undefined) {
+      currentEpoch.value = Math.round((data.progress / 100) * totalEpochs.value);
+    }
+
+    // 滚动控制台
+    const el = document.getElementById('console');
+    if (el) el.scrollTop = el.scrollHeight;
+
+    if (data.status === 'done') {
+      clearInterval(_pollTimer);
+      training.value = false;
+      // 从 result 或 metrics 中读取最终指标
+      const result = data.result || {};
+      const finalTrainLoss = result.final_train_loss ?? metrics.bestLoss;
+      const finalTestLoss  = result.final_test_loss  ?? metrics.testLoss;
+      Object.assign(metrics, { trainLoss: finalTrainLoss, testLoss: finalTestLoss });
+      computePhysicalMetrics(finalTrainLoss);
+      addLog(`✓ 训练完成！Train Loss: ${finalTrainLoss.toFixed(6)} | Test Loss: ${finalTestLoss.toFixed(6)} | 模型: ${result.model_filename || ''}`, 'info');
+    } else if (data.status === 'failed') {
+      clearInterval(_pollTimer);
+      training.value = false;
+      addLog(`✗ 训练失败：${data.error || '未知错误'}`, 'error');
+    }
+  } catch (e) {
+    addLog(`轮询状态出错：${e.message}`, 'warn');
+  }
+}
+
+const startTraining = async () => {
   if (training.value) return;
+  if (!activeDs.value) {
+    addLog('⚠ 请先在数据集选择器中选择一个数据集', 'warn');
+    return;
+  }
   if (!datasetReady.value) {
     addLog('⚠ 训练数据未就绪！请先前往「数据治理」完成全部处理步骤', 'warn');
     return;
   }
+
   training.value = true;
   trainingComplete.value = false;
   clearChart();
-  addLog(`数据集：${activeDs.value?.name || '默认'} — 输入(${processedInfo.trainSamples}×${processedInfo.inputDim}) + 输出(${processedInfo.trainSamples}×${processedInfo.outputDim})`, 'info');
-  addLog(`启动 ${modelType.value.toUpperCase()} 训练 | ${isDLModel.value ? `共 ${totalEpochs.value} Epoch` : `${savedConfig.value.mlParams?.cvFolds || 5}-Fold CV`}`, 'info');
+  _seenLogCount = 0;
 
-  trainingInterval = setInterval(() => {
-    if (currentEpoch.value >= totalEpochs.value) {
-      clearInterval(trainingInterval);
+  const reqBody = {
+    dataset_id: activeDs.value.id,
+    model_type: modelType.value.toUpperCase(),
+    epochs: totalEpochs.value,
+    batch_size: savedConfig.value.dlParams?.batchSize || 16,
+    learning_rate: parseFloat(savedConfig.value.dlParams?.lr || '1e-4'),
+    // DNN 层配置（前端存的是 [{id,units,activation}...]）
+    hidden_layers: savedConfig.value.dnn?.hiddenLayers || [],
+    // CNN 层配置
+    conv_layers: savedConfig.value.cnn?.convLayers || [],
+    fc_units: savedConfig.value.cnn?.fcUnits || 256,
+    // RF 超参数
+    n_estimators:      savedConfig.value.rf?.nEstimators      ?? 100,
+    max_depth:         savedConfig.value.rf?.maxDepth          ?? 20,
+    min_samples_split: savedConfig.value.rf?.minSamplesSplit   ?? 2,
+    min_samples_leaf:  savedConfig.value.rf?.minSamplesLeaf    ?? 1,
+    max_features:      savedConfig.value.rf?.maxFeatures       ?? 'sqrt',
+    bootstrap:         savedConfig.value.rf?.bootstrap         ?? true,
+    oob_score:         savedConfig.value.rf?.oobScore          ?? false,
+  };
+
+  addLog(`提交训练任务：${reqBody.model_type} | ${reqBody.epochs} Epoch | BS=${reqBody.batch_size} | LR=${reqBody.learning_rate}`, 'info');
+
+  try {
+    const token = localStorage.getItem('auth_token');
+    const resp = await fetch('http://127.0.0.1:5000/api/model/train', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(reqBody),
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      addLog(`✗ 启动训练失败：${data.error || JSON.stringify(data)}`, 'error');
       training.value = false;
-      computePhysicalMetrics(metrics.bestLoss);
-      addLog(`✓ 训练完成！Best Loss: ${metrics.bestLoss.toFixed(8)} | MAE: ${metrics.mae.toFixed(4)} T | RMSE: ${metrics.rmse.toFixed(4)} T | R²: ${metrics.r2.toFixed(4)}`, 'info');
       return;
     }
-    currentEpoch.value += 30;
-    const l  = Math.exp(-currentEpoch.value / 600) * 0.12 + 0.0022 + (Math.random() - 0.5) * 0.0006;
-    const tl = l * (1.05 + Math.random() * 0.08);
 
-    lossData.value.push(+l.toFixed(8));
-    testLossData.value.push(+tl.toFixed(8));
-    epochLabels.value.push(currentEpoch.value);
-    Object.assign(metrics, { trainLoss: l, testLoss: tl, bestLoss: Math.min(metrics.bestLoss, l) });
+    _currentModelId = data.model_id;
+    addLog(`训练任务已启动，Model ID: ${_currentModelId}。开始轮询进度...`, 'info');
 
-    chartOption.value.xAxis.data = [...epochLabels.value];
-    chartOption.value.series[0].data = [...lossData.value];
-    chartOption.value.series[1].data = [...testLossData.value];
-
-    if (currentEpoch.value % 300 === 0) {
-      addLog(`Epoch ${currentEpoch.value}/${totalEpochs.value} | TrainLoss: ${l.toFixed(8)} | TestLoss: ${tl.toFixed(8)}`, 'info');
-      const el = document.getElementById('console');
-      if (el) el.scrollTop = el.scrollHeight;
-    }
-  }, 400);
+    // 每 3 秒拉一次状态
+    _pollTimer = setInterval(() => _pollStatus(_currentModelId), 2000);
+  } catch (e) {
+    addLog(`✗ 请求失败：${e.message}`, 'error');
+    training.value = false;
+  }
 };
 
 // ---- Demo Data Loader（论文截图用）----
-const loadDemoData = () => {
-  if (training.value) return;
-  clearChart();
-  datasetReady.value = true;
-  logs.value = [{ time: '--:--:--', content: 'SYSTEM: 训练引擎就绪，等待指令...', type: 'info' }];
-
-  // 生成 100 个 epoch 点 (epoch 30→3000，步长 30)
-  const N = 100;
-  let bestL = Infinity;
-  for (let i = 1; i <= N; i++) {
-    const ep = i * 30;
-    // 指数衰减 + 轻微波动，使曲线自然
-    const base = Math.exp(-ep / 480) * 0.095 + 0.0022;
-    const noise = (Math.random() - 0.5) * 0.0005 * Math.exp(-ep / 800);
-    const l  = Math.max(0.002, base + noise);
-    const tl = l * (1.04 + Math.random() * 0.07 * Math.exp(-ep / 600));
-    lossData.value.push(+l.toFixed(8));
-    testLossData.value.push(+tl.toFixed(8));
-    epochLabels.value.push(ep);
-    if (l < bestL) bestL = l;
-  }
-
-  currentEpoch.value = totalEpochs.value;
-  const finalL  = lossData.value[N - 1];
-  const finalTL = testLossData.value[N - 1];
-
-  Object.assign(metrics, { trainLoss: finalL, testLoss: finalTL, bestLoss: bestL });
-  chartOption.value.xAxis.data = [...epochLabels.value];
-  chartOption.value.series[0].data = [...lossData.value];
-  chartOption.value.series[1].data = [...testLossData.value];
-
-  computePhysicalMetrics(bestL);
-
-  addLog(`[DEMO] 数据加载完成 — DNN_v1.0 · 共 ${totalEpochs.value} Epoch`, 'info');
-  addLog(`[DEMO] Best Loss: ${bestL.toFixed(8)} | MAE: ${metrics.mae.toFixed(4)} T | RMSE: ${metrics.rmse.toFixed(4)} T | R²: ${metrics.r2.toFixed(4)}`, 'info');
-  addLog(`[DEMO] 训练集: 12000 样本 × 6 特征 → 测试集: 3000 样本，PCA输出维度: 30`, 'info');
-};
 
 const stopTraining = () => {
-  if (trainingInterval) clearInterval(trainingInterval);
+  if (_pollTimer) clearInterval(_pollTimer);
   training.value = false;
-  addLog('训练任务已被用户中止。', 'error');
+  addLog('已停止轮询（后端训练进程仍在运行，可在模型中心查看结果）。', 'warn');
 };
 </script>
 

@@ -18,6 +18,7 @@ from api.devices.gaoya import router as gaoya_router
 from api.devices.reactor import router as reactor_router
 from api.devices.transfield import router as transfield_router
 from api.files.routes import router as files_router
+from api.knowledge.routes import router as knowledge_router
 
 
 @asynccontextmanager
@@ -63,6 +64,7 @@ app.include_router(files_router,     prefix="/api/files",      tags=["文件管�
 app.include_router(gaoya_router,     prefix="/api/gaoya",      tags=["高压套管"])
 app.include_router(reactor_router,   prefix="/api/reactor",    tags=["电抗器"])
 app.include_router(transfield_router,prefix="/api/transfield", tags=["变压器电场"])
+app.include_router(knowledge_router, prefix="/api/ai/knowledge", tags=["知识库"])
 
 
 @app.get("/", tags=["健康检查"])

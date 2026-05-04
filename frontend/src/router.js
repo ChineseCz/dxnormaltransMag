@@ -13,6 +13,7 @@ import DeptManagement from './views/user/DeptManagement.vue';
 
 // 数据中心
 import DatasetManage from './views/data/DatasetManage.vue';
+import DataStorage from './views/data/DataStorage.vue';
 import DataUpload from './views/data/DataUpload.vue';
 import DataProcessing from './views/data/DataProcessing.vue';
 
@@ -27,9 +28,6 @@ import PredictSetup from './views/prediction/PredictSetup.vue';
 import PredictResult from './views/prediction/PredictResult.vue';
 import PredictCompare from './views/prediction/PredictCompare.vue';
 import PredictHistory from './views/prediction/PredictHistory.vue';
-import GaoyaField from './views/prediction/GaoyaField.vue';
-import ReactorField from './views/prediction/ReactorField.vue';
-import TransformerField from './views/prediction/TransformerField.vue';
 
 // AI 助手
 import AiChat from './views/assistant/AiChat.vue';
@@ -53,8 +51,9 @@ const routes = [
       { path: 'dept-management', component: DeptManagement },
       { path: 'user-center', redirect: '/user-management' },
       // 数据中心
+      { path: 'data-storage', component: DataStorage },
       { path: 'dataset-manage', component: DatasetManage },
-      { path: 'data-upload', component: DataUpload },
+      { path: 'data-upload', redirect: '/dataset-manage' },
       { path: 'data-processing', component: DataProcessing },
       // 模型训练
       { path: 'model-architecture', component: ModelArchitecture },
@@ -62,14 +61,14 @@ const routes = [
       { path: 'model-evaluation', component: ModelEvaluation },
       { path: 'model-management', component: ModelManagement },
       { path: 'model-training', redirect: '/model-architecture' },
-      // 实时预测
-      { path: 'predict-setup', component: PredictSetup },
-      { path: 'predict-result', component: PredictResult },
+      // 实时预测（移除设备场专用云图页）
+      { path: 'predict-setup',   component: PredictSetup },
+      { path: 'predict-result',  component: PredictResult },
       { path: 'predict-compare', component: PredictCompare },
       { path: 'predict-history', component: PredictHistory },
-      { path: 'gaoya-field', component: GaoyaField },
-      { path: 'reactor-field', component: ReactorField },
-      { path: 'transformer-field', component: TransformerField },
+      { path: 'gaoya-field',       redirect: '/predict-result' },
+      { path: 'reactor-field',     redirect: '/predict-result' },
+      { path: 'transformer-field', redirect: '/predict-result' },
       { path: 'real-time-prediction', redirect: '/predict-setup' },
       // AI 助手
       { path: 'ai-chat', component: AiChat },

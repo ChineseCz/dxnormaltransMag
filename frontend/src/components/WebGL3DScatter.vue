@@ -37,6 +37,7 @@ const props = defineProps({
   boxWidth:  { type: Number, default: 80 },
   boxHeight: { type: Number, default: 40 },
   boxDepth:  { type: Number, default: 80 },
+  coordSystem: { type: String, default: 'xyz' },  // 'xyz' | 'rz'
 });
 
 // ── 暴露端到端渲染时间给父组件 ──────────────────────────────────────────────
@@ -83,10 +84,12 @@ function buildOption(pts) {
     tooltip: {
       formatter(params) {
         const d = params.data;
+        const isRZ = props.coordSystem === 'rz';
+        const r = isRZ ? Math.sqrt(d[0]*d[0] + d[1]*d[1]).toFixed(2) : null;
         return `<b>${props.label || '电磁场'}</b><br/>`
-             + `x: ${d[0].toFixed(2)} mm<br/>`
-             + `y: ${d[1].toFixed(2)} mm<br/>`
-             + `z: ${d[2].toFixed(2)} mm<br/>`
+             + (isRZ
+               ? `r: ${r} mm<br/>z: ${d[2].toFixed(2)} mm<br/>`
+               : `x: ${d[0].toFixed(2)} mm<br/>y: ${d[1].toFixed(2)} mm<br/>z: ${d[2].toFixed(2)} mm<br/>`)
              + `${props.label || 'value'}: ${fmt(d[3])} ${props.unit}`;
       },
     },
@@ -130,12 +133,12 @@ function buildOption(pts) {
       axisLabel:   { textStyle: { color: '#94a3b8', fontSize: 10 } },
     },
     xAxis3D: {
-      name: 'x / mm',
+      name: props.coordSystem === 'rz' ? 'x(r·cosθ) / mm' : 'x / mm',
       type: 'value',
       nameTextStyle: { color: '#60a5fa', fontSize: 11 },
     },
     yAxis3D: {
-      name: 'y / mm',
+      name: props.coordSystem === 'rz' ? 'y(r·sinθ) / mm' : 'y / mm',
       type: 'value',
       nameTextStyle: { color: '#60a5fa', fontSize: 11 },
     },

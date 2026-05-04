@@ -10,7 +10,7 @@ _HERE     = os.path.dirname(os.path.abspath(__file__))   # api/devices/
 _BACKEND  = os.path.dirname(os.path.dirname(_HERE))       # backend/
 ROOT_DIR  = os.path.dirname(_BACKEND)                     # project root
 
-DATA_FILE = os.path.join(ROOT_DIR, 'core_algorithms', '电抗器', '100[A[.txt')
+DATA_FILE = os.path.join(ROOT_DIR, 'core_algorithms', '电抗器', '100[A].txt')
 _cache    = None
 
 

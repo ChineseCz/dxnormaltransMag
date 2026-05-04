@@ -199,7 +199,137 @@ const contextSwitches = ref({
   model: true,
 });
 
+// RAG knowledge base toggle
+const ragEnabled = ref(false);
+
+// Dynamic context data
+const contextData = ref({
+  dataset: null,
+  model: null,
+  prediction: null,
+});
+
 // 知识库
+async function loadContextData() {
+  const token = localStorage.getItem('auth_token') || '';
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  const selectedDatasetId = localStorage.getItem('selected_dataset_id');
+
+  // 1. Dataset context
+  try {
+    if (selectedDatasetId) {
+      const r = await fetch(`/api/dataset/list`, { headers });
+      if (r.ok) {
+        const data = await r.json();
+        const list = data.datasets || data.list || data || [];
+        const ds = list.find(d => d.id === selectedDatasetId || String(d.id) === selectedDatasetId);
+        if (ds) {
+          const inputVars = ds.inputVariables || ds.input_variables || [];
+          const trainInfo = ds.trainInfo || ds.train_info || {};
+          contextData.value.dataset = {
+            id: ds.id,
+            name: ds.name,
+            deviceType: ds.deviceType || ds.device_type || '',
+            fieldType: ds.fieldType || ds.field_type || '',
+            inputDim: trainInfo.inputDim || trainInfo.input_dim || (Array.isArray(inputVars) ? inputVars.length : '-'),
+            outputNodes: trainInfo.rawOutputDim || trainInfo.raw_output_dim || trainInfo.output_nodes || '-',
+            samples: (trainInfo.trainSamples || 0) + (trainInfo.testSamples || 0) || '-',
+            trainInfo: trainInfo,
+          };
+        }
+      }
+    }
+  } catch (e) { console.warn('[Context] Failed to load dataset:', e); }
+
+  // 2. Model context
+  try {
+    const r = await fetch(`/api/model/list`, { headers });
+    if (r.ok) {
+      const data = await r.json();
+      const list = data.models || data.list || data || [];
+      const activeModelId = localStorage.getItem('selected_model_id');
+      const model = activeModelId
+        ? list.find(m => String(m.id) === String(activeModelId))
+        : list.find(m => m.status === 'trained' || m.status === 'completed');
+      if (model) {
+        const trainParams = model.train_params || model.params || {};
+        contextData.value.model = {
+          id: model.id,
+          name: model.name,
+          modelType: model.model_type || model.modelType || 'DNN',
+          architecture: model.architecture || '',
+          hiddenLayers: model.hidden_layers || model.hiddenLayers || 2,
+          pcaDims: trainParams.pca_dims || trainParams.pcaDims || 6,
+          optimizer: trainParams.optimizer || 'Adam',
+          lr: trainParams.learning_rate || trainParams.lr || 1e-3,
+          batch: trainParams.batch_size || trainParams.batch || 32,
+          epoch: trainParams.epochs || trainParams.epoch || 100,
+          mae: model.mae || null,
+        };
+      }
+    }
+  } catch (e) { console.warn('[Context] Failed to load model:', e); }
+
+  // 3. Prediction context
+  try {
+    const hist = JSON.parse(localStorage.getItem('predict_history') || '[]');
+    if (hist.length > 0) {
+      const last = hist[0];
+      const currentModelType = contextData.value.model?.modelType || '';
+      contextData.value.prediction = {
+        modelType: last.modelType || '',
+        current: last.current || '-',
+        bMax: last.bMax || '-',
+        bMin: last.bMin || '-',
+        bMean: last.bMean || '-',
+        bStd: last.bStd || '-',
+        timestamp: last.timestamp || '',
+        isCurrentModel: !currentModelType || last.modelType === currentModelType,
+      };
+    }
+  } catch (e) { console.warn('[Context] Failed to load prediction:', e); }
+}
+
+
+async function syncConversations() {
+  const token = localStorage.getItem('auth_token') || '';
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  try {
+    const r = await fetch(`${API}/conversations`, { headers });
+    if (r.ok) {
+      const data = await r.json();
+      conversations.value = (data.conversations || []).map(c => ({
+        id: c.id,
+        title: c.title || '新对话',
+        createdAt: c.created_at || c.createdAt,
+        updatedAt: c.updated_at || c.updatedAt,
+        messageCount: c.message_count || c.messageCount || 0,
+      }));
+    }
+  } catch (e) {
+    console.warn('[AI] syncConversations failed:', e);
+  }
+}
+
+async function loadMessages(convId) {
+  const token = localStorage.getItem('auth_token') || '';
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  try {
+    const r = await fetch(`${API}/conversations/${convId}/messages`, { headers });
+    if (r.ok) {
+      const data = await r.json();
+      messages.value = (data.messages || []).map(m => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        timestamp: m.created_at ? new Date(m.created_at).toLocaleTimeString() : '',
+      }));
+    }
+  } catch (e) {
+    console.warn('[AI] loadMessages failed:', e);
+  }
+}
+
 const knowledgeDocs = ref([]);
 
 // Agent 任务
@@ -284,21 +414,44 @@ export function useAiStore() {
   // ── 构建上下文摘要（注入 system prompt） ──
   function buildContextSummary() {
     const parts = [];
-    if (contextSwitches.value.dataset) {
+    const cd = contextData.value;
+
+    if (contextSwitches.value.dataset && cd.dataset) {
+      const ds = cd.dataset;
+      parts.push(`[数据集: ${ds.id} ${ds.name} 设备=${ds.deviceType} 场=${ds.fieldType} 输入${ds.inputDim}维 输出${ds.outputNodes}节点 ${ds.samples}组样本]`);
+    } else if (contextSwitches.value.dataset) {
       try {
         const dsRaw = localStorage.getItem('selected_dataset_id');
         if (dsRaw) parts.push(`[当前数据集ID: ${dsRaw}]`);
       } catch {}
     }
-    if (contextSwitches.value.prediction) {
-      try {
-        const hist = JSON.parse(localStorage.getItem('predict_history') || '[]');
-        if (hist.length > 0) {
-          const last = hist[0];
-          parts.push(`[最近预测: ${last.modelType} 模型, ${(last.fieldValues||[]).length}个场点, ${last.timestamp}]`);
-        }
-      } catch {}
+
+    if (contextSwitches.value.model && cd.model) {
+      const m = cd.model;
+      const modelDesc = m.architecture ? `${m.modelType}${m.architecture}` : m.modelType;
+      const maeStr = m.mae != null ? ` MAE=${Number(m.mae).toExponential(2)}` : '';
+      let paramStr = '';
+      if (m.modelType === 'RF') {
+        paramStr = `PCA=${m.pcaDims}维 Epoch=${m.epoch}`;
+      } else {
+        paramStr = `PCA=${m.pcaDims}维 ${m.optimizer} lr=${m.lr} Batch=${m.batch} Epoch=${m.epoch}`;
+      }
+      parts.push(`[模型: ${modelDesc} ${paramStr}${maeStr}]`);
     }
+
+    if (contextSwitches.value.prediction) {
+      if (cd.prediction) {
+        const p = cd.prediction;
+        if (p.isCurrentModel) {
+          parts.push(`[最近预测: 模型=${p.modelType} I=${p.current}A B_max=${p.bMax}T B_min=${p.bMin}T ${String.fromCharCode(956)}=${p.bMean}T ${String.fromCharCode(963)}=${p.bStd}T]`);
+        } else {
+          parts.push(`[预测记录: 当前激活的${cd.model?.modelType || '当前模型'}模型暂无预测记录，请前往"实时预测"模块执行预测]`);
+        }
+      } else {
+        parts.push(`[预测记录: ${cd.model?.modelType || '当前模型'}模型暂无预测记录，请前往"实时预测"模块执行预测]`);
+      }
+    }
+
     return parts.length > 0 ? '平台上下文: ' + parts.join(' ') : '';
   }
 
@@ -367,19 +520,30 @@ export function useAiStore() {
     }
 
     try {
+      const token = localStorage.getItem('auth_token') || '';
       const contextStr = buildContextSummary();
       const historyForApi = msgs.value
         .filter(m => !m.loading)
         .slice(-10)
         .map(m => ({ role: m.role, content: m.content }));
+      const messagesForApi = contextStr
+        ? [{ role: 'system', content: contextStr }, ...historyForApi]
+        : historyForApi;
 
-      const res = await fetch(`${API}/chat`, {
+      const res = await fetch(`${API}/chat/stream`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
-          messages: historyForApi,
-          context: contextStr,
-          conversation_id: activeConvId.value,
+          session_id: activeConvId.value || 'default',
+          messages: messagesForApi,
+          temperature: 0.7,
+          max_tokens: 2000,
+          stream: true,
+          rag_enabled: ragEnabled.value,
+          rag_top_k: 5,
         }),
       });
 
@@ -388,7 +552,7 @@ export function useAiStore() {
       const contentType = res.headers.get('content-type') || '';
 
       if (contentType.includes('text/event-stream')) {
-        // SSE 流式
+        // SSE 流式（后端返回 JSON Lines 格式）
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
@@ -405,18 +569,30 @@ export function useAiStore() {
           buffer = lines.pop() || '';
 
           for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6);
-              if (data === '[DONE]') break;
-              try {
-                const parsed = JSON.parse(data);
-                const delta = parsed.choices?.[0]?.delta?.content || parsed.content || parsed.text || '';
-                if (delta && aiMsg) {
-                  aiMsg.content += delta;
+            if (!line.trim()) continue;
+            try {
+              const parsed = JSON.parse(line);
+              if (parsed.type === 'route' && aiMsg) {
+                aiMsg.route = parsed.route || null;
+                aiMsg.sources = parsed.sources || { kg: [], vector: [] };
+              } else if (parsed.type === 'content' && parsed.content) {
+                if (aiMsg) aiMsg.content += parsed.content;
+              } else if (parsed.type === 'done') {
+                console.log('Stream completed:', parsed.usage);
+              } else if (parsed.error) {
+                throw new Error(parsed.error);
+              }
+            } catch {
+              // 尝试兼容 data: 前缀 SSE 格式
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6);
+                if (data !== '[DONE]') {
+                  try {
+                    const parsed = JSON.parse(data);
+                    const delta = parsed.choices?.[0]?.delta?.content || '';
+                    if (delta && aiMsg) aiMsg.content += delta;
+                  } catch {}
                 }
-              } catch {
-                // 纯文本 delta
-                if (data && aiMsg) aiMsg.content += data;
               }
             }
           }
@@ -473,7 +649,9 @@ export function useAiStore() {
   // ── 知识库 ──
   async function fetchKnowledge() {
     try {
-      const res = await fetch(`${API}/knowledge/list`);
+      const token = localStorage.getItem('auth_token') || '';
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await fetch(`${API}/knowledge/list`, { headers });
       const data = await res.json();
       knowledgeDocs.value = data.documents || [];
     } catch {
@@ -486,7 +664,9 @@ export function useAiStore() {
     formData.append('file', file);
     formData.append('category', category);
     try {
-      const res = await fetch(`${API}/knowledge/upload`, { method: 'POST', body: formData });
+      const token = localStorage.getItem('auth_token') || '';
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await fetch(`${API}/knowledge/upload`, { method: 'POST', body: formData, headers });
       const data = await res.json();
       ElMessage.success(data.message || '文档上传成功');
       await fetchKnowledge();
@@ -498,7 +678,9 @@ export function useAiStore() {
 
   async function deleteKnowledge(docId) {
     try {
-      await fetch(`${API}/knowledge/${docId}`, { method: 'DELETE' });
+      const token = localStorage.getItem('auth_token') || '';
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await fetch(`${API}/knowledge/${docId}`, { method: 'DELETE', headers });
       knowledgeDocs.value = knowledgeDocs.value.filter(d => d.id !== docId);
       ElMessage.success('文档已删除');
     } catch (e) {
@@ -508,14 +690,78 @@ export function useAiStore() {
 
   async function searchKnowledge(query) {
     try {
+      const token = localStorage.getItem('auth_token') || '';
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
       const res = await fetch(`${API}/knowledge/search`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ query, top_k: 5 }),
       });
       return await res.json();
     } catch {
       return { results: [] };
+    }
+  }
+
+  // ── 知识图谱 ──
+
+  async function extractKg(docId) {
+    try {
+      const token = localStorage.getItem('auth_token') || '';
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const formData = new FormData();
+      formData.append('doc_id', docId);
+      const res = await fetch(`${API}/knowledge/kg/extract`, {
+        method: 'POST', body: formData, headers,
+      });
+      const data = await res.json();
+      if (data.ok) ElMessage.success(data.message || '图谱抽取已提交');
+      else ElMessage.warning(data.error || '抽取失败');
+      return data;
+    } catch (e) {
+      ElMessage.error('图谱抽取失败: ' + e.message);
+    }
+  }
+
+  async function getKgStats() {
+    try {
+      const token = localStorage.getItem('auth_token') || '';
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await fetch(`${API}/knowledge/kg/stats`, { headers });
+      return await res.json();
+    } catch {
+      return { entities: 0, relations: 0, available: false };
+    }
+  }
+
+  async function searchKg(query, maxHops = 4, limit = 5) {
+    try {
+      const token = localStorage.getItem('auth_token') || '';
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+      const res = await fetch(`${API}/knowledge/kg/search`, {
+        method: 'POST', headers,
+        body: JSON.stringify({ query, max_hops: maxHops, limit }),
+      });
+      return await res.json();
+    } catch {
+      return { results: [] };
+    }
+  }
+
+  async function deleteKg(docId) {
+    try {
+      const token = localStorage.getItem('auth_token') || '';
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await fetch(`${API}/knowledge/kg/${docId}`, { method: 'DELETE', headers });
+      ElMessage.success('文档图谱数据已删除');
+    } catch (e) {
+      ElMessage.error('删除失败: ' + e.message);
     }
   }
 
@@ -556,11 +802,18 @@ export function useAiStore() {
     newConversation, switchConversation, deleteConversation, renameConversation,
     // 消息
     sendMessage, renderMarkdown, contextSwitches,
+    // Dynamic context
+    contextData, loadContextData,
+    // RAG
+    ragEnabled,
+    syncConversations, loadMessages,
     // 抽屉
     drawerVisible, drawerMessages, isDrawerStreaming,
     openDrawer, closeDrawer, sendDrawerMessage, expandDrawerToFull,
     // 知识库
     knowledgeDocs, fetchKnowledge, uploadKnowledge, deleteKnowledge, searchKnowledge,
+    // 知识图谱
+    extractKg, getKgStats, searchKg, deleteKg,
     // Agent
     agentTasks, executeAgent,
   };

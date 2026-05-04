@@ -10,10 +10,10 @@
           </div>
           <h1 class="text-2xl font-extrabold tracking-tight"
               style="background:linear-gradient(90deg,#2dd4bf,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
-            数据集管理
+            模板构建
           </h1>
         </div>
-        <p class="text-slate-500 text-xs mt-1.5 ml-[48px]">管理不同电气设备与电磁场的数据集</p>
+        <p class="text-slate-500 text-xs mt-1.5 ml-[48px]">构建模板项目并管理上传/导入文件</p>
       </div>
       <div class="flex items-center gap-3">
         <button @click="showGuide = true"
@@ -119,8 +119,24 @@
         <!-- Footer -->
         <div class="flex justify-between items-center pt-3" style="border-top:1px solid rgba(51,65,85,0.3);">
           <span class="text-[10px] text-slate-600">创建于 {{ ds.createdAt }}</span>
-          <span class="text-[10px] font-mono px-2 py-0.5 rounded"
-                style="background:rgba(51,65,85,0.3); color:#64748b;">{{ ds.id }}</span>
+          <div class="flex items-center gap-2">
+            <button
+              @click="openImport(ds)"
+              class="px-2 py-1 rounded text-[10px]"
+              style="background:rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.3); color:#c4b5fd;"
+            >
+              从数据存储导入
+            </button>
+            <button
+              @click="openExplorer(ds)"
+              class="px-2 py-1 rounded text-[10px]"
+              style="background:rgba(14,165,233,0.12); border:1px solid rgba(14,165,233,0.3); color:#7dd3fc;"
+            >
+              资源管理器
+            </button>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded"
+                  style="background:rgba(51,65,85,0.3); color:#64748b;">{{ ds.id }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -210,11 +226,27 @@
           </div>
         </div>
 
-        <!-- 逐工况输入变量说明 (perfile) -->
-        <div v-else class="pt-2 px-3 py-2 rounded-lg text-xs"
-             style="background:rgba(8,145,178,0.07); border:1px solid rgba(8,145,178,0.2); color:#7dd3fc;">
-          📂 逐工况模式：平台将自动从文件名中提取激励量数值作为输入，
-          无需手动定义输入变量文件。文件名中的首个数字将被识别为工况值。
+        <!-- 逐工况输入变量说明 + 工况变量名 (perfile) -->
+        <div v-else class="pt-2 space-y-2">
+          <div class="px-3 py-2 rounded-lg text-xs"
+               style="background:rgba(8,145,178,0.07); border:1px solid rgba(8,145,178,0.2); color:#7dd3fc;">
+            📂 逐工况模式：平台将自动从文件名中提取激励量数值作为输入。
+            请填写工况变量名称与单位，用于预测时的参数标注。
+          </div>
+          <div class="flex items-center gap-2 p-2 rounded-lg"
+               style="background:rgba(2,8,23,0.5); border:1px solid rgba(51,65,85,0.4);">
+            <span class="text-slate-400 text-xs flex-shrink-0">工况变量</span>
+            <el-input
+              v-model="form.inputVariables[0].name"
+              placeholder="如 激励电流"
+              size="small" class="flex-1"
+            />
+            <el-input
+              v-model="form.inputVariables[0].unit"
+              placeholder="单位，如 A"
+              size="small" style="width:90px;"
+            />
+          </div>
         </div>
 
         <!-- 输出变量 -->
@@ -251,6 +283,56 @@
         <el-button @click="showGuide = false">关闭</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog
+      v-model="showExplorer"
+      :title="`数据集资源管理器 · ${explorerDataset?.name || ''}`"
+      width="92%"
+      top="4vh"
+      style="--el-dialog-bg-color:#0f172a; --el-dialog-border-radius:16px; max-width:1400px;"
+    >
+      <DatasetStorageExplorer
+        v-if="showExplorer && explorerDataset?.id"
+        :dataset-id="explorerDataset.id"
+        @changed="fetchAll"
+      />
+    </el-dialog>
+
+    <el-dialog
+      v-model="showImport"
+      :title="`导入文件到模板 · ${importDataset?.name || ''}`"
+      width="900px"
+      top="6vh"
+      style="--el-dialog-bg-color:#0f172a; --el-dialog-border-radius:16px;"
+    >
+      <div class="flex items-center gap-2 mb-3">
+        <el-select v-model="importTemplate" size="small" style="width:220px" @change="loadStorageFiles">
+          <el-option v-for="t in storageTemplates" :key="t.key" :label="t.name" :value="t.key" />
+        </el-select>
+        <el-button size="small" @click="loadStorageFiles">刷新</el-button>
+      </div>
+      <el-table :data="storageFiles" size="small" max-height="460">
+        <el-table-column prop="filename" label="文件名" min-width="200" />
+        <el-table-column prop="template" label="模板" width="120" />
+        <el-table-column label="文件角色" width="150">
+          <template #default="{ row }">
+            <el-select v-model="row.role" size="small" placeholder="选择角色">
+              <el-option label="📊 输出场" value="output" />
+              <el-option label="📈 输入激励" value="input" />
+              <el-option label="📍 坐标文件" value="coordinate" />
+            </el-select>
+          </template>
+        </el-table-column>
+        <el-table-column prop="modified_at" label="修改时间" width="150" />
+        <el-table-column label="操作" width="100">
+          <template #default="{ row }">
+            <el-button size="small" type="primary" @click="doImport(row)" :disabled="!row.role">
+              导入
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-dialog>
   </div>
 </template>
 
@@ -259,6 +341,7 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import { Plus, Delete, Check, FolderOpened, QuestionFilled } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import DataSpecGuide from '@/components/DataSpecGuide.vue';
+import DatasetStorageExplorer from '@/components/DatasetStorageExplorer.vue';
 
 const API = 'http://127.0.0.1:5000/api/dataset';
 
@@ -266,7 +349,14 @@ const datasets = ref([]);
 const loading = ref(false);
 const showCreate = ref(false);
 const showGuide = ref(false);
+const showExplorer = ref(false);
+const showImport = ref(false);
 const creating = ref(false);
+const explorerDataset = ref(null);
+const importDataset = ref(null);
+const storageTemplates = ref([]);
+const storageFiles = ref([]);
+const importTemplate = ref('multicolumn');
 
 const deviceTypes = ref([]);
 const fieldTypes = ref([]);
@@ -314,10 +404,13 @@ const dataOrgHints = {
 
 function onDataOrgChange(val) {
   if (val === 'perfile') {
-    // For perfile, coordCols default 2 (r,z)
     form.coordSystem = 'rz';
     form.coordCols = 2;
     form.timeStep = 0;
+    // 保证 perfile 模式下至少有一个工况变量条目
+    if (!form.inputVariables.length) {
+      form.inputVariables.push({ name: '激励电流', unit: 'A' });
+    }
   } else {
     form.coordSystem = 'xyz';
     form.coordCols = 3;
@@ -432,6 +525,56 @@ async function confirmDelete(ds) {
     datasets.value = datasets.value.filter(d => d.id !== ds.id);
     ElMessage.success('数据集已删除');
   } catch { /* cancelled */ }
+}
+
+function openExplorer(ds) {
+  explorerDataset.value = ds;
+  showExplorer.value = true;
+}
+
+async function loadStorageTemplates() {
+  const res = await fetch('/api/dataset/storage/templates');
+  const data = await res.json();
+  storageTemplates.value = data.templates || [];
+}
+
+async function loadStorageFiles() {
+  const q = new URLSearchParams({ template: importTemplate.value }).toString();
+  const res = await fetch(`/api/dataset/storage/files?${q}`);
+  const data = await res.json();
+  // 为每个文件添加默认角色
+  storageFiles.value = (data.files || []).map(f => ({
+    ...f,
+    role: 'output' // 默认为输出场
+  }));
+}
+
+async function openImport(ds) {
+  importDataset.value = ds;
+  showImport.value = true;
+  if (!storageTemplates.value.length) await loadStorageTemplates();
+  await loadStorageFiles();
+}
+
+async function doImport(row) {
+  if (!importDataset.value?.id) return;
+  if (!row.role) {
+    ElMessage.warning('请先选择文件角色');
+    return;
+  }
+  try {
+    const res = await fetch(`/api/dataset/${importDataset.value.id}/import-storage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: row.path, role: row.role }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || '导入失败');
+    ElMessage.success(`已导入: ${row.filename} (${row.role})`);
+    fetchAll();
+  } catch (e) {
+    ElMessage.error(e.message || '导入失败');
+  }
 }
 
 onMounted(fetchAll);
