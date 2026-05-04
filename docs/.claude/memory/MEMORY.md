@@ -1,0 +1,3 @@
+- [User Profile](user_profile.md) — 开发者角色、技术背景、协作偏好
+- [Project KG-RAG](project_kg_rag.md) — KG-RAG 双轨架构实现状态与待办
+- [Feedback Style](feedback_style.md) — 响应风格与沟通偏好

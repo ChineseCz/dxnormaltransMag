@@ -13,7 +13,7 @@
             多次对比
           </h1>
         </div>
-        <p class="text-slate-500 text-xs mt-1.5 ml-[48px]">选取两条预测记录，对比物理场分布差异与误差指标</p>
+        <p class="text-slate-500 text-xs mt-1.5 ml-[48px]">选取两条预测记录，对比电磁场分布差异与误差指标</p>
       </div>
     </div>
 
@@ -108,7 +108,7 @@
           <div class="card-header">
             <div class="flex items-center gap-2">
               <el-icon size="14" style="color:#60a5fa;"><TrendCharts /></el-icon>
-              <span class="text-white font-bold text-sm">物理场分布叠加对比</span>
+              <span class="text-white font-bold text-sm">电磁场分布叠加对比</span>
             </div>
           </div>
           <div class="h-[380px] p-4">
@@ -163,7 +163,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import {
   Switch, List, TrendCharts, DataLine, Histogram,
 } from '@element-plus/icons-vue';
@@ -178,17 +178,26 @@ import { usePredictionStore } from '../../composables/usePredictionStore.js';
 
 use([CanvasRenderer, LineChart, BarChart, GridComponent, TooltipComponent, LegendComponent, DataZoomComponent]);
 
-const { predictionHistory: history } = usePredictionStore();
+const { predictionHistory: history, compareTargetId } = usePredictionStore();
 
 const selectedA = ref('');
 const selectedB = ref('');
+
+// 如果从预测记录页带过来了预选 id，自动填入 A 槽
+onMounted(() => {
+  if (compareTargetId.value) {
+    selectedA.value = compareTargetId.value;
+    compareTargetId.value = null;   // 消费后清空
+  }
+});
 
 const recordA = computed(() => history.value.find(r => r.id === selectedA.value));
 const recordB = computed(() => history.value.find(r => r.id === selectedB.value));
 const canCompare = computed(() => recordA.value && recordB.value);
 
 function formatLabel(r) {
-  return `${r.timestamp} | ${r.modelType} | ${r.datasetName || ''}`;
+  const ds = r.datasetName || r.datasetId || '—';
+  return `${r.timestamp} | ${r.modelType} | ${ds}`;
 }
 
 // ──── 输入参数对比表 ────

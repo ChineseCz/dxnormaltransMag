@@ -1,0 +1,168 @@
+● 目录不存在，我来创建 CLAUDE.md 和 memory 文件。
+
+● Write(E:\Project\dxnormaltransMag\dxnormaltransMag\CLAUDE.md)
+  ⎿  Wrote 75 lines to E:\Project\dxnormaltransMag\dxnormaltransMag\CLAUDE.md
+       1 # CLAUDE.md — dx-platform 电磁场预测平台
+       2
+       3 ## 项目概述
+       4 基于 FastAPI + Vue 3 的电气设备电磁场实时预测平台，支持 DNN/CNN/RF 模型训练、预
+         测，以及 KG-RAG 双轨知识增强 AI 助手。
+       5
+       6 ## 技术栈
+       7 - **后端**: FastAPI + psycopg2 (PooledDB) + Celery + Redis
+       8 - **前端**: Vue 3 (Composition API `<script setup>`) + Element Plus + Tailwind C
+         SS
+       9 - **数据库**: PostgreSQL 16 (主业务) + Neo4j 5 (知识图谱)
+      10 - **存储**: MinIO (S3 兼容对象存储)
+      11 - **AI**: Relay (OpenAI 兼容) + Qwen (DashScope) 双 LLM 后端
+      12 - **向量**: FAISS IndexFlatIP + sentence-transformers (BAAI/bge-small-zh-v1.5, 5
+         12维)
+      13
+      14 ## 目录结构
+      15 ```
+      16 backend/
+      17   main.py                          # FastAPI 入口，注册 11 个 router
+      18   db_pg.py                         # PostgreSQL 连接池 (PooledDB)
+      19   api/
+      20     auth/routes.py, jwt.py         # JWT 鉴权
+      21     assistant/routes.py            # AI 对话 (chat_stream 双轨 SSE)
+      22     assistant/chat_service.py      # LLM 流式调用 (Qwen + Relay)
+      23     knowledge/routes.py            # 知识库 + 图谱 API
+      24     knowledge/knowledge_service.py # 文档解析/分块/FAISS 检索
+      25     knowledge/embedding_service.py # 本地 embedding (sentence-transformers)
+      26     knowledge/vector_store.py      # FAISS 索引管理 (per-user)
+      27     knowledge/graph_store.py       # Neo4j 图谱存储与多跳检索
+      28     knowledge/kg_extract_service.py# LLM 三元组抽取
+      29     knowledge/intent_router.py     # 意图路由 (关键词规则 + LLM)
+      30     ml/model.py, predict.py        # 模型训练与预测
+      31     data/routes.py, dataset.py     # 数据管理
+      32   storage/                         # MinIO/Local 存储抽象
+      33   migrations/                      # SQL 迁移脚本 (001-006)
+      34 frontend/src/
+      35   composables/useAiStore.js        # AI 模块共享状态 (非 Pinia)
+      36   views/assistant/AiChat.vue       # 对话页 (双轨 sources 展示)
+      37   views/assistant/AiKnowledge.vue  # 知识库管理 (文档 + 图谱 tab)
+      38 env/
+      39   docker-compose.yml               # PG/Redis/MinIO/Neo4j/Nacos 等
+      40   requirements.txt                 # Python 依赖
+      41 ```
+      42
+      43 ## 关键架构模式
+      44 - **路由注册**: `app.include_router(router, prefix="/api/xxx")`
+      45 - **鉴权**: `Depends(get_current_user)` 返回 `{"sub": user_id}`
+      46 - **DB 操作**: `get_conn()` 获取连接，手动 commit/close
+      47 - **异步**: `loop.run_in_executor()` 包装 CPU 密集操作，`BackgroundTasks` 异步处
+         理
+      48 - **SSE 流式**: JSON Lines 格式 `{"type":"route|content|done", ...}`
+      49 - **前端状态**: Vue composable 单例模式，localStorage 持久化
+      50 - **前端 API**: 直接 fetch，token 从 localStorage 读取
+      51
+      52 ## KG-RAG 双轨架构
+      53 ```
+      54 用户提问 → 意图路由 (intent_router) → asyncio.gather 并发:
+      55   ├─ KG 轨道: graph_store.search_paths() → Neo4j 多跳路径
+      56   └─ 向量轨道: knowledge_service.search_documents() → FAISS
+      57 → SSE 先发 {"type":"route", badges, sources}
+      58 → 再流式输出 LLM 回答
+      59 ```
+      60
+      61 ## 常用命令
+      62 ```bash
+      63 # 后端启动
+      64 cd backend && python run.py
+      65
+      66 # 前端启动
+      67 cd frontend && npm run dev
+      68
+      69 # Docker 基础设施
+      70 cd env && docker-compose up -d postgres redis minio neo4j
+      71 ```
+      72
+      73 ## 环境变量 (.env)
+      74 关键变量: PG_HOST/PORT/USER/PASSWORD/DB, REDIS_HOST, MINIO_ENDPOINT,
+      75 NEO4J_URI/USER/PASSWORD, RELAY_API_KEY/URL/MODEL, DASHSCOPE_API_KEY, CHAT_SERVIC
+         E
+
+                                                                10:01 PM claude-opus-4.7
+● 现在创建 memory 文件。
+
+● Write(C:\Users\HJF\.claude\projects\E--Project-dxnormaltransMag-dxnormaltransMag\memory\MEMORY
+  .md)
+  ⎿  Wrote 3 lines to
+     C:\Users\HJF\.claude\projects\E--Project-dxnormaltransMag-dxnormaltransMag\memory\MEMORY.md
+      1 - [User Profile](user_profile.md) — 开发者角色、技术背景、协作偏好
+      2 - [Project KG-RAG](project_kg_rag.md) — KG-RAG 双轨架构实现状态与待办
+      3 - [Feedback Style](feedback_style.md) — 响应风格与沟通偏好
+
+● Write(C:\Users\HJF\.claude\projects\E--Project-dxnormaltransMag-dxnormaltransMag\memory\user_p
+  rofile.md)
+  ⎿  Wrote 17 lines to C:\Users\HJF\.claude\projects\E--Project-dxnormaltransMag-dxnormaltransMa
+     g\memory\user_profile.md
+       1 ---
+       2 name: 开发者画像
+       3 description: 用户是全栈开发者，负责电磁场预测平台，熟悉 Python/Vue/Docker，中文
+         沟通
+       4 type: user
+       5 originSessionId: 3a65527b-6891-4c08-b465-468ae841f645
+       6 ---
+       7 全栈开发者，负责 dx-platform 电气设备电磁场实时预测平台的开发。
+       8
+       9 技术栈熟悉度：
+      10 - 后端: Python (FastAPI), PostgreSQL, Redis, Docker
+      11 - 前端: Vue 3, Element Plus, Tailwind
+      12 - AI/ML: 了解 DNN/CNN/RF 模型训练，使用 LLM API (Qwen/OpenAI 兼容)
+      13 - 基础设施: Docker Compose, MinIO, Neo4j
+      14
+      15 工作语言：中文
+      16 Git 用户名：ChineseCz
+      17 当前分支：feat_v1
+
+● Write(C:\Users\HJF\.claude\projects\E--Project-dxnormaltransMag-dxnormaltransMag\memory\projec
+  t_kg_rag.md)
+  ⎿  Wrote 20 lines to C:\Users\HJF\.claude\projects\E--Project-dxnormaltransMag-dxnormaltransMa
+     g\memory\project_kg_rag.md
+       1 ---
+       2 name: KG-RAG 双轨架构进度
+       3 description: Phase 4 知识图谱与双轨 KG-RAG 的实现状态、已完成步骤和待验证项
+       4 type: project
+       5 originSessionId: 3a65527b-6891-4c08-b465-468ae841f645
+       6 ---
+       7 Phase 4 KG-RAG 双轨混合检索架构已于 2026-05-03 完成代码实现。
+       8
+       9 **Why:** 将单轨 FAISS-RAG 升级为论文中的 KG-RAG 双轨架构，提升故障诊断场景的上下
+         文召回率（论文数据：A 类 CR 从 0.39 提升到 0.72）。
+      10
+      11 **已完成：**
+      12 - Step 1: Neo4j 5 加入 docker-compose，neo4j 驱动已安装，环境变量已配置
+      13 - Step 2: graph_store.py — Neo4j 连接管理、MERGE 写入、CONTAINS 中文关键词多跳检
+         索
+      14 - Step 3: kg_extract_service.py — LLM Few-Shot 三元组抽取（用户后续增加了 chunk
+         去重 + 抽取缓存 t_kg_extract_cache 表）
+      15 - Step 4: intent_router.py — 关键词规则 + LLM 兜底分类，所有类型都走双轨
+      16 - Step 5: assistant/routes.py 双轨调度 — asyncio.gather 并发，SSE 先发 route/sou
+         rces 再流式内容
+      17 - Step 6: 前端适配 — useAiStore.js 解析 route SSE，AiKnowledge.vue 新增图谱 tab
+      18 - 数据库: t_knowledge_triple 表已建，t_kg_extract_cache 表由用户后续添加
+      19
+      20 **How to apply:** 后续开发应基于此双轨架构扩展，不要回退到单轨 RAG。新增知识库功
+         能时注意同时考虑向量和图谱两条轨道。
+
+● Write(C:\Users\HJF\.claude\projects\E--Project-dxnormaltransMag-dxnormaltransMag\memory\feedba
+  ck_style.md)
+  ⎿  Wrote 14 lines to C:\Users\HJF\.claude\projects\E--Project-dxnormaltransMag-dxnormaltransMa
+     g\memory\feedback_style.md
+       1 ---
+       2 name: 沟通与响应偏好
+       3 description: 用户偏好简洁中文回复，关注费用，不需要冗余解释
+       4 type: feedback
+       5 originSessionId: 3a65527b-6891-4c08-b465-468ae841f645
+       6 ---
+       7 用户偏好简洁直接的中文回复，不需要过多解释性文字。
+       8
+       9 **Why:** 用户关注 API 费用（Opus 4.7 每轮对话输入 token 随上下文增长），冗长回复
+         会增加不必要的 token 消耗。
+      10
+      11 **How to apply:**
+      12 - 回复尽量简短，代码为主，解释为辅
+      13 - 大任务完成后建议开新会话，避免上下文膨胀
+      14 - 日常开发建议用 Sonnet，复杂架构设计再用 Opus

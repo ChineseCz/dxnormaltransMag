@@ -27,7 +27,7 @@
           <div v-if="!isCollapsed" class="overflow-hidden">
             <div class="font-extrabold leading-tight tracking-tight"
               style="font-size:20px; background:linear-gradient(90deg,#93c5fd,#818cf8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; white-space:nowrap;">
-              电力设备物理场预测平台
+              电气设备电磁场预测平台
             </div>
             <div class="text-[11px] text-slate-500 tracking-wider uppercase mt-1">Physical Field AI</div>
           </div>
@@ -39,7 +39,7 @@
             active-text-color="#60a5fa"
             background-color="transparent"
             class="border-r-0"
-            default-active="/model-architecture"
+            :default-active="route.path"
             router
             text-color="#94a3b8"
             style="--el-menu-hover-bg-color:rgba(59,130,246,0.08);">
@@ -75,11 +75,11 @@
                   <span class="text-slate-100 font-semibold" style="font-size:17px;">数据中心</span>
                 </div>
               </template>
-              <el-menu-item index="/dataset-manage">
-                <el-icon size="15"><FolderOpened /></el-icon><span class="ml-1" style="font-size:15px;">数据集管理</span>
+              <el-menu-item index="/data-storage">
+                <el-icon size="15"><FolderOpened /></el-icon><span class="ml-1" style="font-size:15px;">数据存储</span>
               </el-menu-item>
-              <el-menu-item index="/data-upload">
-                <el-icon size="15"><Upload /></el-icon><span class="ml-1" style="font-size:15px;">数据上传</span>
+              <el-menu-item index="/dataset-manage">
+                <el-icon size="15"><Upload /></el-icon><span class="ml-1" style="font-size:15px;">模板构建</span>
               </el-menu-item>
               <el-menu-item index="/data-processing">
                 <el-icon size="15"><Cpu /></el-icon><span class="ml-1" style="font-size:15px;">数据处理</span>
@@ -150,9 +150,11 @@
               <el-menu-item index="/ai-knowledge">
                 <el-icon size="15"><Collection /></el-icon><span class="ml-1" style="font-size:15px;">知识库</span>
               </el-menu-item>
+              <!-- Agent 工作台（未完成，暂时隐藏）
               <el-menu-item index="/ai-agent">
                 <el-icon size="15"><SetUp /></el-icon><span class="ml-1" style="font-size:15px;">Agent 工作台</span>
               </el-menu-item>
+              -->
             </el-sub-menu>
           </el-menu>
         </div>
@@ -187,9 +189,9 @@
             <div class="hidden md:flex items-center gap-2 text-xs text-slate-500">
               <el-icon size="12"><HomeFilled /></el-icon>
               <span>/</span>
-              <span class="text-slate-300">模型训练</span>
+              <span class="text-slate-300">{{ breadcrumbGroup }}</span>
               <span>/</span>
-              <span class="text-blue-400 font-medium">架构设计</span>
+              <span class="text-blue-400 font-medium">{{ breadcrumbPage }}</span>
             </div>
           </div>
           <div class="flex items-center gap-3">
@@ -218,16 +220,41 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import {
   User, DataAnalysis, Cpu, Odometer, MagicStick, ChatDotRound,
-  Platform, Operation, VideoPlay, TrendCharts, Box,
+  Operation, VideoPlay, TrendCharts, Box,
   Setting, Expand, Fold, HomeFilled, Switch, Clock, DataLine,
-  Collection, SetUp, UserFilled, OfficeBuilding, FolderOpened, Upload,
+  Collection, UserFilled, OfficeBuilding, FolderOpened, Upload,
 } from '@element-plus/icons-vue';
 import ChatDrawer from '../components/ChatDrawer.vue';
 
 const isCollapsed = ref(false);
-const asideWidth = computed(() => (isCollapsed.value ? '64px' : '280px'));const toggleCollapse = () => { isCollapsed.value = !isCollapsed.value; };
+const asideWidth = computed(() => (isCollapsed.value ? '64px' : '280px'));
+const toggleCollapse = () => { isCollapsed.value = !isCollapsed.value; };
+const route = useRoute();
+
+const ROUTE_META = {
+  '/user-management':   ['用户中心', '用户管理'],
+  '/role-management':   ['用户中心', '角色管理'],
+  '/dept-management':   ['用户中心', '部门管理'],
+  '/data-storage':      ['数据中心', '数据存储'],
+  '/dataset-manage':    ['数据中心', '模板构建'],
+  '/data-upload':       ['数据中心', '模板构建'],
+  '/data-processing':   ['数据中心', '数据处理'],
+  '/model-architecture':['模型训练', '架构设计'],
+  '/model-training-task':['模型训练', '训练任务'],
+  '/model-evaluation':  ['模型训练', '训练结果'],
+  '/model-management':  ['模型训练', '模型中心'],
+  '/predict-setup':     ['实时预测', '预测配置'],
+  '/predict-result':    ['实时预测', '结果可视化'],
+  '/predict-compare':   ['实时预测', '多次对比'],
+  '/predict-history':   ['实时预测', '预测记录'],
+  '/ai-chat':           ['AI 助手', '智能对话'],
+  '/ai-knowledge':      ['AI 助手', '知识库'],
+};
+const breadcrumbGroup = computed(() => ROUTE_META[route.path]?.[0] ?? '首页');
+const breadcrumbPage  = computed(() => ROUTE_META[route.path]?.[1] ?? route.path);
 </script>
 
 <style scoped>

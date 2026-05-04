@@ -171,7 +171,7 @@ const executing = ref(false);
 const tools = [
   {
     id: 'create_dataset', name: '创建数据集', icon: '📂', color: '#60a5fa',
-    desc: '根据描述自动创建数据集并配置输入/输出变量、物理场类型等参数',
+    desc: '根据描述自动创建数据集并配置输入/输出变量、电磁场类型等参数',
     tags: ['数据管理', '自动化'],
     params: [
       { key: 'name', label: '数据集名称', type: 'text', placeholder: '如：220kV 变压器漏磁场' },
@@ -179,7 +179,7 @@ const tools = [
         { value: 'transformer', label: '变压器' }, { value: 'reactor', label: '电抗器' },
         { value: 'motor', label: '电机' }, { value: 'other', label: '其他' },
       ]},
-      { key: 'fieldType', label: '物理场类型', type: 'select', options: [
+      { key: 'fieldType', label: '电磁场类型', type: 'select', options: [
         { value: 'magnetic', label: '磁场' }, { value: 'temperature', label: '温度场' },
         { value: 'stress', label: '应力场' }, { value: 'electric', label: '电场' },
       ]},
@@ -187,7 +187,7 @@ const tools = [
   },
   {
     id: 'run_prediction', name: '执行预测', icon: '🎯', color: '#f59e0b',
-    desc: '指定模型和输入参数，自动调用预测 API 获取物理场分布结果',
+    desc: '指定模型和输入参数，自动调用预测 API 获取电磁场分布结果',
     tags: ['预测', '推理'],
     params: [
       { key: 'model_file', label: '模型文件', type: 'text', placeholder: '如：DNN_2023-03-13.pth' },

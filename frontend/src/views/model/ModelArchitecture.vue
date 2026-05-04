@@ -37,7 +37,7 @@
     </div>
 
     <!-- Model Type Selector -->
-    <div class="grid grid-cols-5 gap-3">
+    <div class="grid grid-cols-4 gap-3">
       <div v-for="m in modelTypes" :key="m.id"
            @click="selectedModel = m.id"
            class="cursor-pointer rounded-xl p-4 transition-all duration-200 hover:scale-[1.02]"
@@ -217,106 +217,6 @@
               <div class="flex items-center gap-2">
                 <span class="text-slate-400 text-xs">输出:</span>
                 <span class="text-indigo-300 font-mono font-bold">{{ cnnConfig.outputDim }}</span>
-              </div>
-            </div>
-          </div>
-        </el-card>
-      </template>
-
-      <!-- ===== PINN ===== -->
-      <template v-if="selectedModel === 'pinn'">
-        <el-card class="xl:col-span-2" style="background:rgba(10,18,36,0.85); border:1px solid rgba(20,184,166,0.15);">
-          <template #header>
-            <div class="flex justify-between items-center">
-              <div class="flex items-center gap-2">
-                <div class="w-5 h-5 rounded flex items-center justify-center" style="background:rgba(20,184,166,0.18);">
-                  <el-icon style="color:#34d399;" size="13"><Connection /></el-icon>
-                </div>
-                <span class="text-slate-200 font-semibold text-sm">PINN 物理信息神经网络</span>
-                <span class="text-xs px-2 py-0.5 rounded-full ml-1"
-                      style="background:rgba(20,184,166,0.12); color:#34d399; border:1px solid rgba(20,184,166,0.2);">
-                  {{ pinnConfig.hiddenLayers.length + 2 }} 层
-                </span>
-              </div>
-              <button @click="addPinnLayer"
-                      class="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all hover:scale-105"
-                      style="background:rgba(20,184,166,0.12); color:#34d399; border:1px solid rgba(20,184,166,0.25);">
-                <el-icon size="13"><CirclePlus /></el-icon> 添加隐藏层
-              </button>
-            </div>
-          </template>
-          <div class="space-y-3">
-            <div class="layer-row" style="background:rgba(15,118,110,0.12); border-color:rgba(20,184,166,0.25);">
-              <div class="indicator-green"></div>
-              <div class="flex-1">
-                <div class="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mb-0.5">Input Layer</div>
-                <div class="text-slate-400 font-semibold text-sm">物理状态输入</div>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-slate-400 text-xs">维度:</span>
-                <span class="text-emerald-300 font-bold font-mono text-lg">{{ activeInputDim }}</span>
-              </div>
-              <div class="text-right">
-                <div class="text-slate-400 text-xs">包括坐标/边界条件</div>
-                <div class="text-slate-500 text-[11px]">由数据集定义</div>
-              </div>
-            </div>
-            <TransitionGroup name="layer-list">
-              <div v-for="(layer, index) in pinnConfig.hiddenLayers" :key="layer.id" class="layer-row group">
-                <div class="indicator-gray"></div>
-                <div style="min-width:90px;">
-                  <div class="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-0.5">Hidden {{ index + 1 }}</div>
-                  <div class="text-slate-400 font-medium text-sm">全连接层</div>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="text-slate-500 text-xs">神经元:</span>
-                  <el-input-number v-model="layer.units" :min="1" :max="2048" size="small" controls-position="right" style="width:110px;" />
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="text-slate-500 text-xs">激活:</span>
-                  <el-select v-model="layer.activation" size="small" style="width:120px;">
-                    <el-option label="Tanh" value="tanh" />
-                    <el-option label="Sin" value="sin" />
-                    <el-option label="ReLU" value="relu" />
-                  </el-select>
-                </div>
-                <button @click="removePinnLayer(index)"
-                        class="ml-auto opacity-0 group-hover:opacity-100 transition-all w-7 h-7 rounded-lg flex items-center justify-center"
-                        style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#f87171;">
-                  <el-icon size="13"><Delete /></el-icon>
-                </button>
-              </div>
-            </TransitionGroup>
-            <div class="layer-row" style="background:rgba(10,18,36,0.7); border-color:rgba(20,184,166,0.2);">
-              <div class="indicator-green"></div>
-              <div class="flex-1">
-                <div class="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mb-0.5">Loss Weights</div>
-                <div class="text-slate-400 text-sm">物理残差/边界权重</div>
-              </div>
-              <div class="grid grid-cols-2 gap-3 w-[320px]">
-                <div class="flex items-center gap-2">
-                  <span class="text-slate-500 text-xs">PDE:</span>
-                  <el-input-number v-model="pinnConfig.lossWeights.pde" :min="0" :max="10" :step="0.1" :precision="1" size="small" controls-position="right" style="width:110px;" />
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="text-slate-500 text-xs">BC:</span>
-                  <el-input-number v-model="pinnConfig.lossWeights.bc" :min="0" :max="10" :step="0.1" :precision="1" size="small" controls-position="right" style="width:110px;" />
-                </div>
-              </div>
-            </div>
-            <div class="layer-row" style="background:rgba(6,78,59,0.12); border-color:rgba(16,185,129,0.25);">
-              <div class="indicator-green"></div>
-              <div class="flex-1">
-                <div class="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mb-0.5">Output Layer</div>
-                <div class="text-slate-400 font-semibold text-sm">物理场预测层</div>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-slate-400 text-xs">维度:</span>
-                <span class="text-emerald-300 font-bold font-mono text-lg">{{ activeOutputDim }}</span>
-              </div>
-              <div class="text-right">
-                <div class="text-slate-400 text-xs">符合物理约束的解</div>
-                <div class="text-slate-500 text-[11px]">{{ outputUnitDesc }}</div>
               </div>
             </div>
           </div>
@@ -553,7 +453,7 @@ const outputDimDesc = computed(() => {
 
 const outputUnitDesc = computed(() => {
   const ds = activeDataset.value;
-  const name = ds?.outputVariable?.name || '物理场';
+  const name = ds?.outputVariable?.name || '电磁场';
   const unit = ds?.outputVariable?.unit || '';
   return unit ? `${name}分布 (${unit})` : `${name}分布`;
 });
@@ -564,8 +464,6 @@ function onDatasetChange(ds) {
   dnnConfig.inputDim = activeInputDim.value;
   dnnConfig.outputDim = activeOutputDim.value;
   cnnConfig.outputDim = activeOutputDim.value;
-  pinnConfig.inputDim = activeInputDim.value;
-  pinnConfig.outputDim = activeOutputDim.value;
 }
 
 const selectedModel = ref('dnn');
@@ -588,12 +486,6 @@ const modelTypes = [
     color: '#fbbf24', activeBg: 'rgba(120,53,15,0.3)',
     borderColor: 'rgba(245,158,11,0.5)', glow: 'rgba(245,158,11,0.2)',
     iconBg: 'rgba(245,158,11,0.1)', iconBgActive: 'rgba(245,158,11,0.25)', icon: Share,
-  },
-  {
-    id: 'pinn', label: 'PINN', desc: '物理约束神经网络',
-    color: '#34d399', activeBg: 'rgba(6,78,59,0.3)',
-    borderColor: 'rgba(16,185,129,0.5)', glow: 'rgba(16,185,129,0.2)',
-    iconBg: 'rgba(16,185,129,0.1)', iconBgActive: 'rgba(16,185,129,0.25)', icon: Connection,
   },
 ];
 
@@ -626,21 +518,6 @@ const addCnnLayer = () => {
 };
 const removeCnnLayer = (i) => cnnConfig.convLayers.splice(i, 1);
 
-// ---- PINN ----
-const pinnConfig = reactive({
-  inputDim: 4, outputDim: 1241,
-  hiddenLayers: [
-    { id: 1, units: 64, activation: 'tanh' },
-    { id: 2, units: 64, activation: 'tanh' },
-    { id: 3, units: 64, activation: 'tanh' },
-  ],
-  lossWeights: { pde: 1.0, bc: 1.0 },
-});
-const addPinnLayer = () => {
-  const newId = pinnConfig.hiddenLayers.length > 0 ? Math.max(...pinnConfig.hiddenLayers.map(l => l.id)) + 1 : 1;
-  pinnConfig.hiddenLayers.push({ id: newId, units: 64, activation: 'tanh' });
-};
-const removePinnLayer = (i) => pinnConfig.hiddenLayers.splice(i, 1);
 
 // ---- RF ----
 const rfConfig = reactive({
@@ -655,7 +532,7 @@ const dlParams = reactive({ optimizer: 'Adam', lr: '0.0001', batchSize: 16, epoc
 const mlParams = reactive({ scoring: 'neg_mean_absolute_error', cvFolds: 5, nJobs: -1 });
 
 // ---- Computed ----
-const isDLModel = computed(() => ['dnn', 'cnn', 'pinn'].includes(selectedModel.value));
+const isDLModel = computed(() => ['dnn', 'cnn'].includes(selectedModel.value));
 const currentModelInfo = computed(() => modelTypes.find(m => m.id === selectedModel.value) || modelTypes[0]);
 const estimatedParams = computed(() => {
   if (selectedModel.value !== 'dnn') return 'N/A';
@@ -672,7 +549,7 @@ const saveConfig = () => {
     inputDim: activeInputDim.value,
     outputDim: activeOutputDim.value,
     rawOutputDim: activeRawOutputDim.value,
-    dnn: dnnConfig, cnn: cnnConfig, pinn: pinnConfig, rf: rfConfig,
+    dnn: dnnConfig, cnn: cnnConfig, rf: rfConfig,
     dlParams, mlParams,
   };
   localStorage.setItem('model_config', JSON.stringify(config));
